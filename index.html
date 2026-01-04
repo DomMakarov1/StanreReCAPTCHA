@@ -1,462 +1,238 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Captcha - Make Stan Smile</title>
-  
-  <!-- Fonts -->
-  <link rel="preconnect" href="https://fonts.googleapis.com">
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Gochi+Hand&family=Montserrat:wght@400;600&display=swap" rel="stylesheet">
-
-  <style>
-    /* Global Styles */
-    body {
-      margin: 0;
-      padding: 0;
-      background-color: #f0f2f5;
-      display: flex;
-      justify-content: center;
-      align-items: center;
-      height: 100vh;
-      font-family: 'Montserrat', sans-serif;
-    }
-
-    .container {
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      background: white;
-      padding: 40px;
-      border-radius: 20px;
-      box-shadow: 0 10px 25px rgba(0,0,0,0.1);
-      width: 350px;
-    }
-
-    /* --- STAN CSS ART --- */
-    .stan {
-      position: relative;
-      width: 140px;
-      height: 220px;
-      margin-bottom: 20px;
-    }
-
-    /* Head */
-    .head {
-      position: relative;
-      width: 100px;
-      height: 110px;
-      background-color: #eebb99; /* Skin tone */
-      border-radius: 50px 50px 20px 20px;
-      margin: 0 auto;
-      z-index: 2;
-    }
-
-    /* Hair */
-    .hair {
-      position: absolute;
-      top: -15px;
-      left: 50%;
-      transform: translateX(-50%);
-      width: 20px;
-      height: 25px;
-      background-color: #333;
-      border-radius: 50% 50% 0 0;
-      z-index: 1;
-    }
-    .hair::after {
-      content: '';
-      position: absolute;
-      bottom: 0;
-      left: -5px;
-      width: 10px;
-      height: 10px;
-      background: #333;
-      border-radius: 50%;
-    }
-
-    /* Ears */
-    .ear {
-      position: absolute;
-      top: 50px;
-      width: 20px;
-      height: 25px;
-      background-color: #eebb99;
-      border-radius: 50%;
-      z-index: 1;
-    }
-    .ear.left { left: 10px; }
-    .ear.right { right: 10px; }
-
-    /* Sunglasses */
-    .sunglasses {
-      position: absolute;
-      top: 35px;
-      left: 50%;
-      transform: translateX(-50%);
-      width: 90px;
-      height: 30px;
-      z-index: 5;
-    }
-    .lens {
-      position: absolute;
-      width: 38px;
-      height: 28px;
-      background-color: #000;
-      border-radius: 5px 5px 20px 20px;
-    }
-    .lens.left { left: 0; }
-    .lens.right { right: 0; }
-    /* Bridge of glasses */
-    .sunglasses::after {
-      content: '';
-      position: absolute;
-      top: 5px;
-      left: 38px;
-      width: 14px;
-      height: 4px;
-      background-color: #000;
-    }
-
-    /* Eyes (Hidden behind glasses mostly, but pupil acts as reflection) */
-    .eye {
-      display: none; /* Simplified to just glasses for the look */
-    }
-
-    /* Nose */
-    .nose {
-      position: absolute;
-      top: 70px;
-      left: 50%;
-      transform: translateX(-50%);
-      width: 12px;
-      height: 12px;
-      background-color: #daa07e;
-      border-radius: 50%;
-    }
-
-    /* Mouth */
-    .mouth {
-      position: absolute;
-      bottom: 15px;
-      left: 50%;
-      transform: translateX(-50%);
-      width: 30px;
-      height: 4px;
-      background-color: #333;
-      border-radius: 2px;
-      transition: all 0.3s ease;
-    }
-
-    /* Expressions */
-    .stan.happy .mouth {
-      height: 15px;
-      border-radius: 0 0 20px 20px;
-      background-color: transparent;
-      border-bottom: 4px solid #333;
-      bottom: 18px;
-    }
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Stan's reReCAPTCHA</title>
     
-    .stan.sad .mouth {
-      height: 10px;
-      border-radius: 20px 20px 0 0;
-      background-color: transparent;
-      border-top: 4px solid #333;
-      bottom: 10px;
-    }
-
-    /* Tears */
-    .tear {
-      position: absolute;
-      top: 65px;
-      width: 8px;
-      height: 12px;
-      background-color: #5dade2;
-      border-radius: 50% 0 50% 50%;
-      transform: rotate(45deg) scale(0);
-      opacity: 0;
-      transition: all 0.3s ease;
-    }
-    .tear.left { left: 25px; }
-    .tear.right { right: 25px; }
-
-    .stan.sad .tear {
-      transform: rotate(45deg) scale(1);
-      opacity: 1;
-      animation: cry 1s infinite alternate;
-    }
-
-    @keyframes cry {
-      0% { top: 65px; }
-      100% { top: 80px; }
-    }
-
-    /* Shirt */
-    .shirt {
-      position: relative;
-      width: 100px;
-      height: 70px;
-      background-color: #2c3e50; /* Dark teal/blue */
-      margin: -10px auto 0;
-      border-radius: 10px 10px 0 0;
-      z-index: 3;
-    }
-    .neck {
-      position: absolute;
-      top: -5px;
-      left: 50%;
-      transform: translateX(-50%);
-      width: 30px;
-      height: 10px;
-      background-color: #eebb99;
-      z-index: 4;
-    }
-
-    /* Arms */
-    .arm {
-      position: absolute;
-      top: 5px;
-      width: 25px;
-      height: 80px;
-      background-color: #2c3e50;
-      border-radius: 10px;
-      transform-origin: top center;
-      transition: transform 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275);
-    }
-    .arm.left { 
-      left: -15px; 
-      transform: rotate(10deg);
-    }
-    .arm.right { 
-      right: -15px; 
-      transform: rotate(-10deg);
-    }
-
-    /* Hand & Thumbs Up Logic */
-    .hand {
-      position: absolute;
-      bottom: -10px;
-      left: 0;
-      width: 25px;
-      height: 25px;
-      background-color: #eebb99;
-      border-radius: 50%;
-    }
+    <!-- React & ReactDOM (Development versions for easy debugging, switch to production for live sites if preferred) -->
+    <script crossorigin src="https://unpkg.com/react@18/umd/react.development.js"></script>
+    <script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.development.js"></script>
     
-    .stan.happy .arm.right {
-      transform: rotate(-140deg); /* Raise arm */
-    }
-
-    .checkmark {
-      position: absolute;
-      top: -40px;
-      left: -10px;
-      width: 40px;
-      height: 40px;
-      opacity: 0;
-      transform: scale(0) rotate(45deg); /* Adjusted rotation to be upright relative to screen */
-      transition: all 0.3s ease 0.2s; /* Delay to wait for arm */
-    }
-
-    .stan.happy .checkmark {
-      opacity: 1;
-      transform: scale(1) rotate(140deg); /* Counter-rotate to look straight */
-    }
-
-    /* Pants */
-    .pants {
-      width: 100px;
-      height: 40px;
-      background-color: #34495e;
-      margin: 0 auto;
-      border-radius: 0 0 20px 20px;
-      z-index: 2;
-    }
-    .belt {
-      width: 100%;
-      height: 8px;
-      background-color: #95a5a6;
-    }
-
-    /* --- UI ELEMENTS --- */
-    .prompt {
-      font-family: 'Montserrat', sans-serif;
-      font-weight: 600;
-      margin: 15px 0;
-      text-align: center;
-      color: #333;
-    }
-
-    .button-wrapper {
-      display: flex;
-      gap: 10px;
-      align-items: center;
-      width: 100%;
-    }
-
-    input[type="text"] {
-      flex: 1;
-      padding: 10px 15px;
-      border: 2px solid #ddd;
-      border-radius: 8px;
-      font-family: 'Montserrat', sans-serif;
-      outline: none;
-      transition: border-color 0.2s;
-    }
-    input[type="text"]:focus {
-      border-color: #3498db;
-    }
-
-    .captcha-label {
-      position: absolute;
-      font-size: 10px;
-      color: #aaa;
-      bottom: 50px;
-      left: 45px;
-      font-family: 'Montserrat', sans-serif;
-    }
+    <!-- Babel for translating JSX in the browser -->
+    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
     
-    /* Make wrapper relative to position label if needed, 
-       but here I'll just use the flex flow 
-    */
-    .button-wrapper {
-        position: relative; /* Context for absolute label if we want it inside input area */
-    }
-    .captcha-label {
-        position: absolute;
-        bottom: -20px;
-        left: 0;
-        font-size: 10px;
-        color: #888;
-    }
-
-    .button {
-      background-color: #5dade2;
-      color: white;
-      padding: 10px 20px;
-      border-radius: 8px;
-      cursor: pointer;
-      font-family: 'Montserrat', sans-serif;
-      font-weight: 600;
-      user-select: none;
-      transition: background-color 0.2s;
-      white-space: nowrap;
-    }
-    .button:hover {
-      background-color: #3498db;
-    }
-    .button:active {
-      transform: scale(0.98);
-    }
+    <!-- Tailwind CSS for styling -->
+    <script src="https://cdn.tailwindcss.com"></script>
     
-    /* SVG Checkmark Style */
-    .checkmark svg {
-        width: 100%;
-        height: 100%;
-        fill: #2ecc71;
-        filter: drop-shadow(0 2px 2px rgba(0,0,0,0.2));
-    }
+    <!-- Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;600&display=swap" rel="stylesheet">
 
-  </style>
+    <style>
+        .ease-spring {
+            transition-timing-function: cubic-bezier(0.175, 0.885, 0.32, 1.275);
+        }
+        @keyframes cry {
+            0% { top: 65px; }
+            100% { top: 80px; }
+        }
+        .animate-cry {
+            animation: cry 1s infinite alternate;
+        }
+    </style>
 </head>
 <body>
+    <div id="root"></div>
 
-  <div class="container">
-    <div class="stan" id="stan">
-      <div class="hair"></div>
-      <div class="sunglasses">
-        <div class="lens left"></div>
-        <div class="lens right"></div>
-      </div>
-      <div class="ear left"></div>
-      <div class="ear right"></div>
-      
-      <div class="head">
-        <div class="eyebrow left"></div>
-        <div class="eyebrow right"></div>
-        <!-- Eyes hidden behind glasses -->
-        <div class="eye left">
-          <div class="pupil left"></div>
-        </div>
-        <div class="eye right">
-          <div class="pupil right"></div>
-        </div>
-        <div class="nose"></div>
-        <div class="mouth"></div>
-        <div class="tear left"></div>
-        <div class="tear right"></div>
-      </div>
+    <script type="text/babel">
+        const { useState, useRef, useEffect } = React;
 
-      <div class="shirt">
-        <div class="neck"></div>
-        <div class="arm left"></div>
-        <div class="arm right">
-          <div class="hand right">
-            <div class="checkmark">
-              <!-- Replaced external image with SVG -->
-              <svg viewBox="0 0 512 512" xmlns="http://www.w3.org/2000/svg">
-                <path d="M256 512A256 256 0 1 0 256 0a256 256 0 1 0 0 512zM369 209L241 337c-9.4 9.4-24.6 9.4-33.9 0l-64-64c-9.4-9.4-9.4-24.6 0-33.9s24.6-9.4 33.9 0l47 47L335 175c9.4-9.4 24.6-9.4 33.9 0s9.4 24.6 0 33.9z"/>
-              </svg>
-            </div>
-          </div>
-        </div>
-      </div>
+        function App() {
+            const [state, setState] = useState('idle'); // 'idle', 'happy', 'sad', 'confused'
+            const [inputText, setInputText] = useState('');
+            const inputRef = useRef(null);
 
-      <div class="pants">
-        <div class="belt"></div>
-      </div>
-    </div>
+            // Keywords that make Stan sad (insults about hair/appearance)
+            const sadWords = ['hair', 'bald', 'ugly', 'bad', 'stupid', 'dumb', 'hate', 'gross', 'no', 'robot', 'fake', 'awful', 'trash', 'smelly', 'horrible', 'crap'];
+            
+            // Keywords that make Stan happy (compliments)
+            const happyWords = ['kind','cool', 'nice', 'love', 'handsome', 'smart', 'good', 'best', 'great', 'wow', 'smile', 'pretty', 'beautiful', 'like', 'awesome', 'human', 'amazing', 'wonderful'];
 
-    <div class="prompt" id="promptText">Prove you're human. Make Stan smile.</div>
+            const tellStan = () => {
+                const text = inputText.toLowerCase();
+                
+                const isSad = sadWords.some(word => text.includes(word));
+                const isHappy = happyWords.some(word => text.includes(word));
 
-    <div class="button-wrapper">
-      <input type="text" id="name" name="name" placeholder="Say something nice..." autocomplete="off"/>
-      <div class="captcha-label">reReCAPTCHA</div>
-      <div class="button" onclick="tellStan()">Tell Stan</div>
-    </div>
-  </div>
+                if (isSad) {
+                    setState('sad');
+                } else if (isHappy) {
+                    setState('happy');
+                } else {
+                    // Unrecognized input -> Confused
+                    setState('confused'); 
+                }
+            };
 
-  <script>
-    function tellStan() {
-      const input = document.getElementById('name').value.toLowerCase();
-      const stan = document.getElementById('stan');
-      const prompt = document.getElementById('promptText');
+            const handleKeyDown = (e) => {
+                if (e.key === 'Enter') {
+                    tellStan();
+                }
+            };
 
-      // Keywords that make Stan sad (insults about hair/appearance)
-      const sadWords = ['hair', 'bald', 'ugly', 'bad', 'stupid', 'dumb', 'hate', 'gross', 'no'];
-      
-      // Keywords that make Stan happy (compliments)
-      const happyWords = ['cool', 'nice', 'glasses', 'love', 'handsome', 'smart', 'good', 'best', 'great', 'wow', 'smile', 'pretty', 'beautiful', 'like', 'awesome'];
+            return (
+                <div className="min-h-screen bg-[#f0f2f5] flex items-center justify-center font-sans selection:bg-[#5dade2] selection:text-white">
+                {/* Container */}
+                <div className="bg-white p-10 rounded-[20px] shadow-[0_10px_25px_rgba(0,0,0,0.1)] flex flex-col items-center w-[450px]" style={{ fontFamily: "Arial, sans-serif" }}>
+                    
+                    {/* --- STAN --- */}
+                    <div className={`relative w-[140px] h-[220px] mb-2 transition-all duration-300 ${state}`}>
+                    
+                    {/* Hair */}
+                    <div className="absolute -top-[15px] left-1/2 -translate-x-1/2 w-[20px] h-[25px] bg-[#333] rounded-t-[50%] z-[3] before:absolute before:bottom-0 before:-left-[5px] before:w-[10px] before:h-[10px] before:bg-[#333] before:rounded-full" />
 
-      // Reset classes first
-      stan.classList.remove('happy', 'sad');
+                    {/* Eyebrows - Behind glasses (z-4) */}
+                    {/* Left Eyebrow: Raised high when confused */}
+                    <div 
+                        className={`absolute top-[28px] left-[36px] w-[25px] h-[5px] bg-[#333] z-[4] rounded-full transition-transform duration-300 
+                        ${state === 'happy' ? '-translate-y-1 rotate-[-5deg]' 
+                            : state === 'sad' ? 'rotate-[-15deg] translate-y-1' 
+                            : state === 'confused' ? '-translate-y-2 rotate-[-20deg]' 
+                            : ''}
+                        `} 
+                    />
+                    {/* Right Eyebrow: Stays low/flat when confused for contrast */}
+                    <div 
+                        className={`absolute top-[28px] right-[36px] w-[25px] h-[5px] bg-[#333] z-[4] rounded-full transition-transform duration-300 
+                        ${state === 'happy' ? '-translate-y-1 rotate-[5deg]' 
+                            : state === 'sad' ? 'rotate-[15deg] translate-y-1' 
+                            : state === 'confused' ? 'translate-y-0 rotate-[0deg]' 
+                            : ''}
+                        `} 
+                    />
 
-      // Check input logic
-      const isSad = sadWords.some(word => input.includes(word));
-      const isHappy = happyWords.some(word => input.includes(word));
+                    {/* Sunglasses (z-5) */}
+                    <div className="absolute top-[35px] left-1/2 -translate-x-1/2 w-[80px] h-[35px] z-[5] flex justify-center">
+                        <div className="w-[40px] h-full border-[5px] border-black border-r-[2.5px] bg-transparent rounded-b-[12px]" />
+                        <div className="w-[40px] h-full border-[5px] border-black border-l-[2.5px] bg-transparent rounded-b-[12px]" />
+                        <div className="absolute top-0 left-0 w-full h-[5px] bg-black" />
+                    </div>
 
-      if (isSad) {
-        stan.classList.add('sad');
-        prompt.innerText = "You made Stan cry. Robot.";
-        prompt.style.color = "#e74c3c";
-      } else if (isHappy) {
-        stan.classList.add('happy');
-        prompt.innerText = "You are human! Stan is happy.";
-        prompt.style.color = "#2ecc71";
-      } else {
-        // Neutral response
-        prompt.innerText = "Stan doesn't get it. Try again.";
-        prompt.style.color = "#333";
-      }
-    }
+                    {/* Ears */}
+                    <div className="absolute top-[50px] w-[20px] h-[25px] bg-[#eebb99] rounded-full z-[1] left-[10px]" />
+                    <div className="absolute top-[50px] w-[20px] h-[25px] bg-[#eebb99] rounded-full z-[1] right-[10px]" />
 
-    // Allow pressing "Enter" to trigger the button
-    document.getElementById('name').addEventListener('keypress', function (e) {
-      if (e.key === 'Enter') {
-        tellStan();
-      }
-    });
-  </script>
+                    {/* Head */}
+                    <div className="relative w-[100px] h-[110px] bg-[#eebb99] rounded-[50px_50px_20px_20px] mx-auto z-[2]">
+                        
+                        {/* Eyes */}
+                        <div className="absolute top-[40px] left-[19px] w-[28px] h-[22px] bg-white rounded-b-[15px] z-[4] overflow-hidden flex justify-center items-center">
+                        <div className={`w-[10px] h-[10px] bg-black rounded-full transition-transform duration-300 translate-y-[-2px] ${state === 'sad' ? 'translate-y-[2px]' : ''}`} />
+                        </div>
+                        <div className="absolute top-[40px] right-[19px] w-[28px] h-[22px] bg-white rounded-b-[15px] z-[4] overflow-hidden flex justify-center items-center">
+                        <div className={`w-[10px] h-[10px] bg-black rounded-full transition-transform duration-300 translate-y-[-2px] ${state === 'sad' ? 'translate-y-[2px]' : ''}`} />
+                        </div>
+
+                        {/* Nose */}
+                        <div className="absolute top-[75px] left-1/2 -translate-x-1/2 w-[12px] h-[12px] bg-[#daa07e] rounded-full" />
+                        
+                        {/* Mouth - Confused: Small crooked line */}
+                        <div 
+                        className={`absolute left-1/2 -translate-x-1/2 transition-all duration-300
+                            ${state === 'happy' 
+                            ? 'w-[30px] h-[20px] bg-transparent border-b-[4px] border-[#333] rounded-b-full bottom-[13px]' 
+                            : state === 'sad'
+                                ? 'w-[30px] h-[20px] bg-transparent border-t-[4px] border-[#333] rounded-t-full bottom-[4px]'
+                                : state === 'confused'
+                                ? 'w-[20px] h-[4px] bg-[#333] rounded-[2px] bottom-[16px] -rotate-6'
+                                : 'w-[30px] h-[4px] bg-[#333] rounded-[2px] bottom-[16px]'
+                            }
+                        `} 
+                        />
+
+                        {/* Tears */}
+                        <div className={`absolute top-[70px] left-[25px] w-[4px] bg-[#5dade2] rounded-full transition-all duration-700 ease-in ${state === 'sad' ? 'h-[40px] opacity-100' : 'h-0 opacity-0'}`} />
+                        <div className={`absolute top-[70px] right-[25px] w-[4px] bg-[#5dade2] rounded-full transition-all duration-700 ease-in ${state === 'sad' ? 'h-[40px] opacity-100' : 'h-0 opacity-0'}`} />
+                    </div>
+
+                    {/* Shirt */}
+                    <div className="relative w-[100px] h-[70px] bg-black -mt-[10px] mx-auto rounded-[10px_10px_0_0] z-[3]">
+                        <div className="absolute -top-[5px] left-1/2 -translate-x-1/2 w-[30px] h-[10px] bg-[#eebb99] z-[4]" />
+                        <div 
+                        className={`absolute top-[5px] -right-[15px] w-[25px] h-[80px] bg-black rounded-[10px] origin-top-center transition-all duration-500 ease-spring
+                            ${state === 'idle' ? 'opacity-0 rotate-0' : 'opacity-100'}
+                            ${state === 'happy' ? 'rotate-[-140deg]' : ''}
+                            ${state === 'sad' ? 'rotate-[-20deg]' : ''}
+                            ${state === 'confused' ? 'rotate-[-140deg]' : ''} /* Holding up the question mark */
+                        `}
+                        >
+                        <div className="absolute -bottom-[10px] left-0 w-[25px] h-[25px] bg-[#eebb99] rounded-full">
+                            <div 
+                            className={`absolute -top-[40px] -left-[10px] w-[40px] h-[40px] transition-all duration-300 delay-200
+                                ${state !== 'idle' ? 'opacity-100 scale-100' : 'opacity-0 scale-0'}
+                                ${state === 'happy' || state === 'confused' ? 'rotate-[140deg]' : 'rotate-[20deg]'}
+                            `}
+                            >
+                            {state === 'happy' && (
+                                <svg viewBox="0 0 512 512" className="w-full h-full fill-[#2ecc71] drop-shadow-sm">
+                                <path d="M256 512A256 256 0 1 0 256 0a256 256 0 1 0 0 512zM369 209L241 337c-9.4 9.4-24.6 9.4-33.9 0l-64-64c-9.4-9.4-9.4-24.6 0-33.9s24.6-9.4 33.9 0l47 47L335 175c9.4-9.4 24.6-9.4 33.9 0s9.4 24.6 0 33.9z"/>
+                                </svg>
+                            )}
+                            {state === 'sad' && (
+                                <svg viewBox="0 0 512 512" className="w-full h-full fill-[#e74c3c] drop-shadow-sm">
+                                <path d="M256 512A256 256 0 1 0 256 0a256 256 0 1 0 0 512zM175 175c9.4-9.4 24.6-9.4 33.9 0l47 47 47-47c9.4-9.4 24.6-9.4 33.9 0s9.4 24.6 0 33.9l-47 47 47 47c9.4 9.4 9.4 24.6 0 33.9s-24.6 9.4-33.9 0l-47-47-47 47c-9.4 9.4-24.6 9.4-33.9 0s-9.4-24.6 0-33.9l47-47-47-47c-9.4-9.4-9.4-24.6 0-33.9z"/>
+                                </svg>
+                            )}
+                            {state === 'confused' && (
+                                <svg viewBox="0 0 512 512" className="w-full h-full fill-[#95a5a6] drop-shadow-sm">
+                                <path d="M256 512A256 256 0 1 0 256 0a256 256 0 1 0 0 512zM216 336h24V272c0-8.8 7.2-16 16-16h16c8.8 0 16-7.2 16-16v-16c0-17.7-14.3-32-32-32h-16c-17.7 0-32 14.3-32 32v16h-24v-16c0-30.9 25.1-56 56-56h16c30.9 0 56 25.1 56 56v16c0 22.1-17.9 40-40 40h-16c-8.8 0-16 7.2-16 16v64h-24v-64zm40 128h-24v-24h24v24z" transform="scale(1.5) translate(-85,-85)"/>
+                                {/* Using a simpler circle-question equivalent manually for robustness */}
+                                <circle cx="256" cy="256" r="256" fill="#95a5a6"/>
+                                <path d="M241 128h30c33.1 0 60 26.9 60 60 0 18.2-8.3 34.5-21.3 45.4-12.3 10.3-19.7 25.8-19.7 42.6v10h-48v-14c0-29.9 13.6-56.7 35.1-73.6 5-3.9 8.2-10 8.2-16.7 0-12.1-9.9-22-22-22h-22c-12.1 0-22 9.9-22 22v14h-48v-18c0-33.1 26.9-60 60-60zm16 256c13.3 0 24-10.7 24-24s-10.7-24-24-24-24 10.7-24 24 10.7 24 24 24z" fill="white" transform="translate(13, 20) scale(0.9)"/>
+                                </svg>
+                            )}
+                            </div>
+                        </div>
+                        </div>
+                    </div>
+
+                    {/* Pants */}
+                    <div className="w-[100px] h-[40px] bg-[#2980b9] mx-auto rounded-[0_0_20px_20px] z-[2]">
+                        <div className="w-full h-[8px] bg-[#95a5a6]" />
+                    </div>
+
+                    </div>
+
+                    {/* --- PROMPT --- */}
+                    <div 
+                    className="font-semibold mb-[20px] mt-[10px] text-center text-[#333] text-[19px] leading-tight tracking-tight"
+                    style={{ fontFamily: "'Montserrat', sans-serif" }}
+                    >
+                    Prove you're a human. Make Stan smile.
+                    </div>
+
+                    {/* --- CONTROLS --- */}
+                    <div className="flex gap-[10px] items-center w-full relative">
+                    <input 
+                        ref={inputRef}
+                        type="text" 
+                        placeholder="Say something nice..." 
+                        autoComplete="off"
+                        value={inputText}
+                        onChange={(e) => setInputText(e.target.value)}
+                        onKeyDown={handleKeyDown}
+                        className="flex-1 p-[6px_15px] border-[2px] border-[#ddd] rounded-[8px] outline-none transition-colors focus:border-[#3498db]"
+                    />
+                    <div className="absolute -bottom-[20px] left-0 text-[10px] text-[#888]">reReCAPTCHA</div>
+                    <button 
+                        onClick={tellStan}
+                        className="bg-[#5dade2] text-white p-[6px_20px] rounded-[8px] cursor-pointer font-semibold select-none transition-transform active:scale-95 hover:bg-[#3498db] whitespace-nowrap"
+                    >
+                        Tell Stan
+                    </button>
+                    </div>
+
+                </div>
+
+                {/* No extra style tag needed here as we used CDN and internal <style> in head */}
+                </div>
+            );
+        }
+
+        const root = ReactDOM.createRoot(document.getElementById('root'));
+        root.render(<App />);
+    </script>
 </body>
 </html>

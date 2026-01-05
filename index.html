@@ -3,236 +3,624 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Stan's reReCAPTCHA</title>
+    <title>Stan's reReCAPTCHA - Friendship Edition</title>
     
-    <!-- React & ReactDOM (Development versions for easy debugging, switch to production for live sites if preferred) -->
-    <script crossorigin src="https://unpkg.com/react@18/umd/react.development.js"></script>
-    <script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.development.js"></script>
-    
-    <!-- Babel for translating JSX in the browser -->
-    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
-    
-    <!-- Tailwind CSS for styling -->
     <script src="https://cdn.tailwindcss.com"></script>
     
-    <!-- Fonts -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;600&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;600;800&display=swap" rel="stylesheet">
 
     <style>
-        .ease-spring {
-            transition-timing-function: cubic-bezier(0.175, 0.885, 0.32, 1.275);
+        .ease-spring { transition-timing-function: cubic-bezier(0.175, 0.885, 0.32, 1.275); }
+        
+        @keyframes cry { 0% { top: 65px; } 100% { top: 80px; } }
+        .animate-cry { animation: cry 1s infinite alternate; }
+        
+        @keyframes dance { 
+            0%, 100% { transform: translateY(0); } 
+            25% { transform: translateY(-10px) rotate(-5deg); } 
+            75% { transform: translateY(-5px) rotate(5deg); } 
         }
-        @keyframes cry {
-            0% { top: 65px; }
-            100% { top: 80px; }
+        .animate-dance { animation: dance 0.5s infinite; }
+        
+        @keyframes shake {
+            0%, 100% { transform: translateX(0); }
+            25% { transform: translateX(-5px); }
+            75% { transform: translateX(5px); }
         }
-        .animate-cry {
-            animation: cry 1s infinite alternate;
+        .animate-shake { animation: shake 0.2s infinite; }
+
+        @keyframes matrix-fade {
+            0% { opacity: 0.1; }
+            50% { opacity: 0.3; }
+            100% { opacity: 0.1; }
         }
+        
+        @keyframes glitch-anim {
+            0% { transform: translate(0); }
+            2% { transform: translate(-2px, 2px); filter: hue-rotate(90deg); }
+            4% { transform: translate(2px, -2px); filter: hue-rotate(-90deg); }
+            6% { transform: translate(0); filter: none; }
+            90% { transform: translate(0); }
+            92% { transform: translate(1px, 1px); }
+            94% { transform: translate(-1px, -1px); }
+            100% { transform: translate(0); }
+        }
+        
+        .matrix-mode {
+            background-color: #000 !important;
+            color: #00ff00 !important;
+            font-family: 'Courier New', monospace !important;
+            border-color: #00ff00 !important;
+            box-shadow: 0 0 20px rgba(0, 255, 0, 0.5) !important;
+            animation: glitch-anim 3s infinite;
+        }
+        
+        .matrix-mode input {
+            background-color: #111 !important;
+            color: #00ff00 !important;
+            border-color: #00ff00 !important;
+        }
+        .matrix-mode button {
+            background-color: #003300 !important;
+            border: 1px solid #00ff00 !important;
+            color: #00ff00 !important;
+        }
+        .matrix-mode button:hover {
+            background-color: #00ff00 !important;
+            color: #000 !important;
+        }
+        .matrix-mode .inventory-panel {
+            background-color: #111 !important;
+            color: #00ff00 !important;
+        }
+        
+        .golden-skin .head, .golden-skin .ear, .golden-skin .neck, .golden-skin .hand, .golden-skin .nose {
+            background: linear-gradient(135deg, #ffd700, #f1c40f, #ffed86) !important;
+            box-shadow: inset 0 0 10px rgba(255, 255, 0, 0.5);
+        }
+
+        .item-card {
+            transition: all 0.2s;
+        }
+        .item-card:hover {
+            transform: translateY(-2px);
+        }
+        .item-card.locked {
+            filter: grayscale(100%);
+            opacity: 0.6;
+            pointer-events: none;
+        }
+        .item-card.locked .icon {
+            filter: blur(5px);
+        }
+        
+        .padlock-icon {
+            transform: translateY(-15px);
+        }
+
+        .hidden { display: none !important; }
     </style>
 </head>
-<body>
-    <div id="root"></div>
+<body id="body" class="min-h-screen flex items-center justify-center font-sans selection:bg-[#5dade2] selection:text-white transition-colors duration-500 bg-[#f0f2f5]">
 
-    <script type="text/babel">
-        const { useState, useRef, useEffect } = React;
+    <div id="matrix-overlay" class="fixed inset-0 pointer-events-none opacity-20 z-0 overflow-hidden text-[#00ff00] font-mono text-xs break-all leading-3 hidden"></div>
 
-        function App() {
-            const [state, setState] = useState('idle'); // 'idle', 'happy', 'sad', 'confused'
-            const [inputText, setInputText] = useState('');
-            const inputRef = useRef(null);
+    <div id="container" class="relative p-10 rounded-[20px] shadow-[0_10px_25px_rgba(0,0,0,0.1)] flex flex-col items-center w-[450px] transition-all duration-300 z-10 overflow-hidden bg-white">
+        
+        <div class="absolute top-4 left-1/2 -translate-x-1/2 z-20">
+            <button 
+                id="inventory-btn"
+                class="p-2 rounded-full shadow-sm transition-all hover:scale-105 active:scale-95 bg-gray-100 text-gray-600 hover:bg-gray-200"
+                title="Inventory"
+            >
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4" />
+                </svg>
+            </button>
+        </div>
 
-            // Keywords that make Stan sad (insults about hair/appearance)
-            const sadWords = ['hair', 'bald', 'ugly', 'bad', 'stupid', 'dumb', 'hate', 'gross', 'no', 'robot', 'fake', 'awful', 'trash', 'smelly', 'horrible', 'crap'];
+        <div 
+            id="inventory-panel"
+            class="inventory-panel absolute inset-0 bg-white/95 backdrop-blur-sm z-[100] transition-transform duration-300 ease-spring flex flex-col p-6 translate-y-full"
+        >
+            <div class="flex justify-between items-center mb-6">
+                <h2 class="text-xl font-bold font-montserrat">Inventory</h2>
+                <button id="close-inventory-btn" class="text-gray-500 hover:text-black">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                    </svg>
+                </button>
+            </div>
+
+            <div id="inventory-grid" class="grid grid-cols-2 gap-3 overflow-y-auto"></div>
+        </div>
+
+        <div class="w-full mb-6 mt-2 relative z-10">
+            <div class="flex justify-between text-xs font-bold uppercase tracking-widest mb-1 opacity-70">
+                <span>Friendship</span>
+                <span id="friendship-text">10%</span>
+            </div>
+            <div id="friendship-bg" class="w-full h-3 rounded-full overflow-hidden bg-gray-200">
+                <div 
+                    id="friendship-bar"
+                    class="h-full transition-all duration-500 ease-out"
+                    style="width: 10%; background-color: #e74c3c;"
+                ></div>
+            </div>
+        </div>
+
+        <div id="stan" class="relative w-[140px] h-[220px] mb-2 transition-all duration-300 idle">
             
-            // Keywords that make Stan happy (compliments)
-            const happyWords = ['kind','cool', 'nice', 'love', 'handsome', 'smart', 'good', 'best', 'great', 'wow', 'smile', 'pretty', 'beautiful', 'like', 'awesome', 'human', 'amazing', 'wonderful'];
+            <div id="acc-hat" class="absolute -top-[40px] left-1/2 -translate-x-1/2 z-[60] hidden">
+                <div class="relative w-0 h-0 border-l-[24px] border-l-transparent border-r-[24px] border-r-transparent border-b-[60px] border-b-[#3498db]">
+                    <div class="absolute top-[20px] -left-[5px] w-2 h-2 bg-yellow-400 rounded-full opacity-90"></div>
+                    <div class="absolute top-[35px] left-[2px] w-2 h-2 bg-red-400 rounded-full opacity-90"></div>
+                    <div class="absolute top-[10px] -left-[2px] w-2 h-2 bg-green-400 rounded-full opacity-90"></div>
+                    <div class="absolute top-[40px] -left-[12px] w-2 h-2 bg-purple-400 rounded-full opacity-90"></div>
+                </div>
+                <div class="absolute -top-[12px] left-1/2 -translate-x-1/2 w-[12px] h-[12px] bg-[#e74c3c] rounded-full"></div>
+            </div>
 
-            const tellStan = () => {
-                const text = inputText.toLowerCase();
+            <div id="acc-tophat" class="absolute -top-[40px] left-1/2 -translate-x-1/2 z-[60] hidden">
+                <div class="w-[50px] h-[50px] bg-[#111] mx-auto rounded-t-sm"></div>
+                <div class="w-[70px] h-[10px] bg-[#111] -mt-1 rounded-sm"></div>
+            </div>
+
+            <div id="acc-ears" class="hidden">
+                <div class="absolute -top-[5px] left-[15px] w-0 h-0 border-l-[15px] border-l-transparent border-r-[15px] border-r-transparent border-b-[30px] border-b-[#333] transform -rotate-[40deg] z-[2]">
+                    <div class="absolute top-[12px] -left-[5px] w-0 h-0 border-l-[5px] border-l-transparent border-r-[5px] border-r-transparent border-b-[10px] border-b-pink-400"></div>
+                </div>
+                <div class="absolute -top-[5px] right-[15px] w-0 h-0 border-l-[15px] border-l-transparent border-r-[15px] border-r-transparent border-b-[30px] border-b-[#333] transform rotate-[40deg] z-[2]">
+                    <div class="absolute top-[12px] -left-[5px] w-0 h-0 border-l-[5px] border-l-transparent border-r-[5px] border-r-transparent border-b-[10px] border-b-pink-400"></div>
+                </div>
+            </div>
+
+            <div id="stan-hair" class="absolute -top-[15px] left-1/2 -translate-x-1/2 w-[20px] h-[25px] bg-[#333] rounded-t-[50%] z-[3] before:absolute before:bottom-0 before:-left-[5px] before:w-[10px] before:h-[10px] before:bg-[#333] before:rounded-full"></div>
+
+            <div id="eyebrow-left" class="absolute top-[28px] left-[36px] w-[25px] h-[5px] bg-[#333] z-[4] rounded-full transition-transform duration-300"></div>
+            <div id="eyebrow-right" class="absolute top-[28px] right-[36px] w-[25px] h-[5px] bg-[#333] z-[4] rounded-full transition-transform duration-300"></div>
+
+            <div class="absolute top-[35px] left-1/2 -translate-x-1/2 w-[80px] h-[35px] z-[5] flex justify-center">
+                <div class="w-[40px] h-full border-[5px] border-black border-r-[2.5px] bg-transparent rounded-b-[12px]"></div>
+                <div class="w-[40px] h-full border-[5px] border-black border-l-[2.5px] bg-transparent rounded-b-[12px]"></div>
+                <div class="absolute top-0 left-0 w-full h-[5px] bg-black"></div>
+            </div>
+
+            <div class="ear absolute top-[50px] w-[20px] h-[25px] bg-[#eebb99] rounded-full z-[1] left-[10px]"></div>
+            <div class="ear absolute top-[50px] w-[20px] h-[25px] bg-[#eebb99] rounded-full z-[1] right-[10px]"></div>
+
+            <div class="head relative w-[100px] h-[110px] bg-[#eebb99] rounded-[50px_50px_20px_20px] mx-auto z-[2]">
+                <div class="absolute top-[40px] left-[19px] w-[28px] h-[22px] bg-white rounded-b-[15px] z-[4] overflow-hidden flex justify-center items-center">
+                    <div id="pupil-left" class="w-[10px] h-[10px] bg-black rounded-full transition-transform duration-300 translate-y-[-2px]"></div>
+                </div>
+                <div class="absolute top-[40px] right-[19px] w-[28px] h-[22px] bg-white rounded-b-[15px] z-[4] overflow-hidden flex justify-center items-center">
+                    <div id="pupil-right" class="w-[10px] h-[10px] bg-black rounded-full transition-transform duration-300 translate-y-[-2px]"></div>
+                </div>
+
+                <div id="stan-nose" class="nose absolute top-[75px] left-1/2 -translate-x-1/2 w-[12px] h-[12px] bg-[#daa07e] rounded-full z-[4]"></div>
+
+                <div id="acc-nose" class="absolute top-[72px] left-1/2 -translate-x-1/2 w-[18px] h-[18px] bg-red-500 rounded-full z-[5] border border-red-700 shadow-sm hidden">
+                    <div class="absolute top-1 left-1 w-[6px] h-[4px] bg-white rounded-full opacity-50"></div>
+                </div>
                 
-                const isSad = sadWords.some(word => text.includes(word));
-                const isHappy = happyWords.some(word => text.includes(word));
+                <div id="stan-mouth" class="absolute left-1/2 -translate-x-1/2 transition-all duration-300 z-[3] h-[4px] bg-[#333] rounded-[2px] bottom-[18px] w-[30px]"></div>
 
-                if (isSad) {
-                    setState('sad');
-                } else if (isHappy) {
-                    setState('happy');
-                } else {
-                    // Unrecognized input -> Confused
-                    setState('confused'); 
-                }
-            };
+                <div id="tear-left" class="absolute top-[70px] left-[25px] w-[4px] bg-[#5dade2] rounded-full transition-all duration-700 ease-in h-0 opacity-0"></div>
+                <div id="tear-right" class="absolute top-[70px] right-[25px] w-[4px] bg-[#5dade2] rounded-full transition-all duration-700 ease-in h-0 opacity-0"></div>
+            </div>
 
-            const handleKeyDown = (e) => {
-                if (e.key === 'Enter') {
-                    tellStan();
-                }
-            };
-
-            return (
-                <div className="min-h-screen bg-[#f0f2f5] flex items-center justify-center font-sans selection:bg-[#5dade2] selection:text-white">
-                {/* Container */}
-                <div className="bg-white p-10 rounded-[20px] shadow-[0_10px_25px_rgba(0,0,0,0.1)] flex flex-col items-center w-[450px]" style={{ fontFamily: "Arial, sans-serif" }}>
-                    
-                    {/* --- STAN --- */}
-                    <div className={`relative w-[140px] h-[220px] mb-2 transition-all duration-300 ${state}`}>
-                    
-                    {/* Hair */}
-                    <div className="absolute -top-[15px] left-1/2 -translate-x-1/2 w-[20px] h-[25px] bg-[#333] rounded-t-[50%] z-[3] before:absolute before:bottom-0 before:-left-[5px] before:w-[10px] before:h-[10px] before:bg-[#333] before:rounded-full" />
-
-                    {/* Eyebrows - Behind glasses (z-4) */}
-                    {/* Left Eyebrow: Raised high when confused */}
-                    <div 
-                        className={`absolute top-[28px] left-[36px] w-[25px] h-[5px] bg-[#333] z-[4] rounded-full transition-transform duration-300 
-                        ${state === 'happy' ? '-translate-y-1 rotate-[-5deg]' 
-                            : state === 'sad' ? 'rotate-[-15deg] translate-y-1' 
-                            : state === 'confused' ? '-translate-y-2 rotate-[-20deg]' 
-                            : ''}
-                        `} 
-                    />
-                    {/* Right Eyebrow: Stays low/flat when confused for contrast */}
-                    <div 
-                        className={`absolute top-[28px] right-[36px] w-[25px] h-[5px] bg-[#333] z-[4] rounded-full transition-transform duration-300 
-                        ${state === 'happy' ? '-translate-y-1 rotate-[5deg]' 
-                            : state === 'sad' ? 'rotate-[15deg] translate-y-1' 
-                            : state === 'confused' ? 'translate-y-0 rotate-[0deg]' 
-                            : ''}
-                        `} 
-                    />
-
-                    {/* Sunglasses (z-5) */}
-                    <div className="absolute top-[35px] left-1/2 -translate-x-1/2 w-[80px] h-[35px] z-[5] flex justify-center">
-                        <div className="w-[40px] h-full border-[5px] border-black border-r-[2.5px] bg-transparent rounded-b-[12px]" />
-                        <div className="w-[40px] h-full border-[5px] border-black border-l-[2.5px] bg-transparent rounded-b-[12px]" />
-                        <div className="absolute top-0 left-0 w-full h-[5px] bg-black" />
-                    </div>
-
-                    {/* Ears */}
-                    <div className="absolute top-[50px] w-[20px] h-[25px] bg-[#eebb99] rounded-full z-[1] left-[10px]" />
-                    <div className="absolute top-[50px] w-[20px] h-[25px] bg-[#eebb99] rounded-full z-[1] right-[10px]" />
-
-                    {/* Head */}
-                    <div className="relative w-[100px] h-[110px] bg-[#eebb99] rounded-[50px_50px_20px_20px] mx-auto z-[2]">
-                        
-                        {/* Eyes */}
-                        <div className="absolute top-[40px] left-[19px] w-[28px] h-[22px] bg-white rounded-b-[15px] z-[4] overflow-hidden flex justify-center items-center">
-                        <div className={`w-[10px] h-[10px] bg-black rounded-full transition-transform duration-300 translate-y-[-2px] ${state === 'sad' ? 'translate-y-[2px]' : ''}`} />
-                        </div>
-                        <div className="absolute top-[40px] right-[19px] w-[28px] h-[22px] bg-white rounded-b-[15px] z-[4] overflow-hidden flex justify-center items-center">
-                        <div className={`w-[10px] h-[10px] bg-black rounded-full transition-transform duration-300 translate-y-[-2px] ${state === 'sad' ? 'translate-y-[2px]' : ''}`} />
-                        </div>
-
-                        {/* Nose */}
-                        <div className="absolute top-[75px] left-1/2 -translate-x-1/2 w-[12px] h-[12px] bg-[#daa07e] rounded-full" />
-                        
-                        {/* Mouth - Confused: Small crooked line */}
-                        <div 
-                        className={`absolute left-1/2 -translate-x-1/2 transition-all duration-300
-                            ${state === 'happy' 
-                            ? 'w-[30px] h-[20px] bg-transparent border-b-[4px] border-[#333] rounded-b-full bottom-[13px]' 
-                            : state === 'sad'
-                                ? 'w-[30px] h-[20px] bg-transparent border-t-[4px] border-[#333] rounded-t-full bottom-[4px]'
-                                : state === 'confused'
-                                ? 'w-[20px] h-[4px] bg-[#333] rounded-[2px] bottom-[16px] -rotate-6'
-                                : 'w-[30px] h-[4px] bg-[#333] rounded-[2px] bottom-[16px]'
-                            }
-                        `} 
-                        />
-
-                        {/* Tears */}
-                        <div className={`absolute top-[70px] left-[25px] w-[4px] bg-[#5dade2] rounded-full transition-all duration-700 ease-in ${state === 'sad' ? 'h-[40px] opacity-100' : 'h-0 opacity-0'}`} />
-                        <div className={`absolute top-[70px] right-[25px] w-[4px] bg-[#5dade2] rounded-full transition-all duration-700 ease-in ${state === 'sad' ? 'h-[40px] opacity-100' : 'h-0 opacity-0'}`} />
-                    </div>
-
-                    {/* Shirt */}
-                    <div className="relative w-[100px] h-[70px] bg-black -mt-[10px] mx-auto rounded-[10px_10px_0_0] z-[3]">
-                        <div className="absolute -top-[5px] left-1/2 -translate-x-1/2 w-[30px] h-[10px] bg-[#eebb99] z-[4]" />
-                        <div 
-                        className={`absolute top-[5px] -right-[15px] w-[25px] h-[80px] bg-black rounded-[10px] origin-top-center transition-all duration-500 ease-spring
-                            ${state === 'idle' ? 'opacity-0 rotate-0' : 'opacity-100'}
-                            ${state === 'happy' ? 'rotate-[-140deg]' : ''}
-                            ${state === 'sad' ? 'rotate-[-20deg]' : ''}
-                            ${state === 'confused' ? 'rotate-[-140deg]' : ''} /* Holding up the question mark */
-                        `}
-                        >
-                        <div className="absolute -bottom-[10px] left-0 w-[25px] h-[25px] bg-[#eebb99] rounded-full">
-                            <div 
-                            className={`absolute -top-[40px] -left-[10px] w-[40px] h-[40px] transition-all duration-300 delay-200
-                                ${state !== 'idle' ? 'opacity-100 scale-100' : 'opacity-0 scale-0'}
-                                ${state === 'happy' || state === 'confused' ? 'rotate-[140deg]' : 'rotate-[20deg]'}
-                            `}
-                            >
-                            {state === 'happy' && (
-                                <svg viewBox="0 0 512 512" className="w-full h-full fill-[#2ecc71] drop-shadow-sm">
-                                <path d="M256 512A256 256 0 1 0 256 0a256 256 0 1 0 0 512zM369 209L241 337c-9.4 9.4-24.6 9.4-33.9 0l-64-64c-9.4-9.4-9.4-24.6 0-33.9s24.6-9.4 33.9 0l47 47L335 175c9.4-9.4 24.6-9.4 33.9 0s9.4 24.6 0 33.9z"/>
+            <div class="relative w-[100px] h-[70px] bg-black -mt-[10px] mx-auto rounded-[10px_10px_0_0] z-[3]">
+                <div class="neck absolute -top-[5px] left-1/2 -translate-x-1/2 w-[30px] h-[10px] bg-[#eebb99] z-[4]"></div>
+                <div id="stan-arm" class="absolute top-[5px] -right-[15px] w-[25px] h-[80px] bg-black rounded-[10px] origin-top-center transition-all duration-500 ease-spring opacity-0 rotate-0">
+                    <div class="hand absolute -bottom-[10px] left-0 w-[25px] h-[25px] bg-[#eebb99] rounded-full">
+                        <div id="hand-item-wrapper" class="absolute -top-[40px] -left-[10px] w-[40px] h-[40px] transition-all duration-300 delay-200 opacity-0 scale-0 rotate-[20deg]">
+                            <div id="icon-happy" class="hidden">
+                                <svg viewBox="0 0 512 512" class="w-full h-full fill-[#2ecc71] drop-shadow-sm"><path d="M256 512A256 256 0 1 0 256 0a256 256 0 1 0 0 512zM369 209L241 337c-9.4 9.4-24.6 9.4-33.9 0l-64-64c-9.4-9.4-9.4-24.6 0-33.9s24.6-9.4 33.9 0l47 47L335 175c9.4-9.4 24.6-9.4 33.9 0s9.4 24.6 0 33.9z"/></svg>
+                            </div>
+                            <div id="icon-sad" class="hidden">
+                                <svg viewBox="0 0 512 512" class="w-full h-full fill-[#e74c3c] drop-shadow-sm"><path d="M256 512A256 256 0 1 0 256 0a256 256 0 1 0 0 512zM175 175c9.4-9.4 24.6-9.4 33.9 0l47 47 47-47c9.4-9.4 24.6-9.4 33.9 0s9.4 24.6 0 33.9l-47 47 47 47c9.4 9.4 9.4 24.6 0 33.9s-24.6 9.4-33.9 0l-47-47-47 47c-9.4 9.4-24.6 9.4-33.9 0s-9.4-24.6 0-33.9l47-47-47-47c-9.4-9.4-9.4-24.6 0-33.9z"/></svg>
+                            </div>
+                            <div id="icon-confused" class="hidden">
+                                <svg viewBox="0 0 512 512" class="w-full h-full fill-[#95a5a6] drop-shadow-sm">
+                                    <circle cx="256" cy="256" r="256" fill="#95a5a6"/>
+                                    <path d="M241 128h30c33.1 0 60 26.9 60 60 0 18.2-8.3 34.5-21.3 45.4-12.3 10.3-19.7 25.8-19.7 42.6v10h-48v-14c0-29.9 13.6-56.7 35.1-73.6 5-3.9 8.2-10 8.2-16.7 0-12.1-9.9-22-22-22h-22c-12.1 0-22 9.9-22 22v14h-48v-18c0-33.1 26.9-60 60-60zm16 256c13.3 0 24-10.7 24-24s-10.7-24-24-24-24 10.7-24 24 10.7 24 24 24z" fill="white" transform="translate(13, 20) scale(0.9)"/>
                                 </svg>
-                            )}
-                            {state === 'sad' && (
-                                <svg viewBox="0 0 512 512" className="w-full h-full fill-[#e74c3c] drop-shadow-sm">
-                                <path d="M256 512A256 256 0 1 0 256 0a256 256 0 1 0 0 512zM175 175c9.4-9.4 24.6-9.4 33.9 0l47 47 47-47c9.4-9.4 24.6-9.4 33.9 0s9.4 24.6 0 33.9l-47 47 47 47c9.4 9.4 9.4 24.6 0 33.9s-24.6 9.4-33.9 0l-47-47-47 47c-9.4 9.4-24.6 9.4-33.9 0s-9.4-24.6 0-33.9l47-47-47-47c-9.4-9.4-9.4-24.6 0-33.9z"/>
-                                </svg>
-                            )}
-                            {state === 'confused' && (
-                                <svg viewBox="0 0 512 512" className="w-full h-full fill-[#95a5a6] drop-shadow-sm">
-                                <path d="M256 512A256 256 0 1 0 256 0a256 256 0 1 0 0 512zM216 336h24V272c0-8.8 7.2-16 16-16h16c8.8 0 16-7.2 16-16v-16c0-17.7-14.3-32-32-32h-16c-17.7 0-32 14.3-32 32v16h-24v-16c0-30.9 25.1-56 56-56h16c30.9 0 56 25.1 56 56v16c0 22.1-17.9 40-40 40h-16c-8.8 0-16 7.2-16 16v64h-24v-64zm40 128h-24v-24h24v24z" transform="scale(1.5) translate(-85,-85)"/>
-                                {/* Using a simpler circle-question equivalent manually for robustness */}
-                                <circle cx="256" cy="256" r="256" fill="#95a5a6"/>
-                                <path d="M241 128h30c33.1 0 60 26.9 60 60 0 18.2-8.3 34.5-21.3 45.4-12.3 10.3-19.7 25.8-19.7 42.6v10h-48v-14c0-29.9 13.6-56.7 35.1-73.6 5-3.9 8.2-10 8.2-16.7 0-12.1-9.9-22-22-22h-22c-12.1 0-22 9.9-22 22v14h-48v-18c0-33.1 26.9-60 60-60zm16 256c13.3 0 24-10.7 24-24s-10.7-24-24-24-24 10.7-24 24 10.7 24 24 24z" fill="white" transform="translate(13, 20) scale(0.9)"/>
-                                </svg>
-                            )}
                             </div>
                         </div>
-                        </div>
                     </div>
-
-                    {/* Pants */}
-                    <div className="w-[100px] h-[40px] bg-[#2980b9] mx-auto rounded-[0_0_20px_20px] z-[2]">
-                        <div className="w-full h-[8px] bg-[#95a5a6]" />
-                    </div>
-
-                    </div>
-
-                    {/* --- PROMPT --- */}
-                    <div 
-                    className="font-semibold mb-[20px] mt-[10px] text-center text-[#333] text-[19px] leading-tight tracking-tight"
-                    style={{ fontFamily: "'Montserrat', sans-serif" }}
-                    >
-                    Prove you're a human. Make Stan smile.
-                    </div>
-
-                    {/* --- CONTROLS --- */}
-                    <div className="flex gap-[10px] items-center w-full relative">
-                    <input 
-                        ref={inputRef}
-                        type="text" 
-                        placeholder="Say something nice..." 
-                        autoComplete="off"
-                        value={inputText}
-                        onChange={(e) => setInputText(e.target.value)}
-                        onKeyDown={handleKeyDown}
-                        className="flex-1 p-[6px_15px] border-[2px] border-[#ddd] rounded-[8px] outline-none transition-colors focus:border-[#3498db]"
-                    />
-                    <div className="absolute -bottom-[20px] left-0 text-[10px] text-[#888]">reReCAPTCHA</div>
-                    <button 
-                        onClick={tellStan}
-                        className="bg-[#5dade2] text-white p-[6px_20px] rounded-[8px] cursor-pointer font-semibold select-none transition-transform active:scale-95 hover:bg-[#3498db] whitespace-nowrap"
-                    >
-                        Tell Stan
-                    </button>
-                    </div>
-
                 </div>
+            </div>
 
-                {/* No extra style tag needed here as we used CDN and internal <style> in head */}
-                </div>
-            );
+            <div class="w-[100px] h-[40px] bg-[#2980b9] mx-auto rounded-[0_0_20px_20px] z-[2]">
+                <div class="w-full h-[8px] bg-[#95a5a6]"></div>
+            </div>
+
+        </div>
+
+        <div 
+            class="font-semibold mb-[20px] mt-[10px] text-center text-[19px] leading-tight tracking-tight transition-colors"
+            style="font-family: 'Montserrat', sans-serif;"
+        >
+            Prove you're a human. Make Stan smile.
+        </div>
+
+        <div class="flex gap-[10px] items-center w-full relative">
+            <input 
+                id="input-text"
+                type="text" 
+                placeholder="Say something nice..." 
+                autocomplete="off"
+                class="flex-1 p-[6px_15px] border-[2px] border-[#ddd] rounded-[8px] outline-none transition-colors focus:border-[#3498db]"
+            />
+            <div class="absolute -bottom-[20px] left-0 text-[10px] opacity-50">reReCAPTCHA 2.0</div>
+            <button 
+                id="submit-btn"
+                class="bg-[#5dade2] text-white p-[6px_20px] rounded-[8px] cursor-pointer font-semibold select-none transition-transform active:scale-95 hover:bg-[#3498db] whitespace-nowrap"
+            >
+                Tell Stan
+            </button>
+        </div>
+
+    </div>
+
+    <script>
+        const ITEMS = [
+            { id: 'hat', name: 'Party Hat', desc: 'Reach 50% Friendship', slot: 'head' },
+            { id: 'tophat', name: 'Top Hat', desc: 'Compliment his hair', slot: 'head' }, 
+            { id: 'ears', name: 'Cat Ears', desc: 'Speak the feline tongue', slot: 'head' },
+            { id: 'nose', name: 'Clown Nose', desc: 'Confuse Stan 3 times', slot: 'face' }, 
+            { id: 'golden', name: 'Golden Skin', desc: 'Reach 100% Friendship', slot: 'skin' },
+            { id: 'matrix', name: 'The Matrix', desc: 'Find the glitch', slot: 'skin' },
+        ];
+
+        const sadWords = ['hair', 'bald', 'ugly', 'bad', 'stupid', 'dumb', 'hate', 'gross', 'no', 'robot', 'fake', 'awful', 'trash', 'smelly', 'horrible', 'crap'];
+        const happyWords = ['kind','cool', 'nice', 'love', 'handsome', 'smart', 'good', 'best', 'great', 'wow', 'smile', 'pretty', 'beautiful', 'like', 'awesome', 'human', 'amazing', 'wonderful', 'friend', 'bestie', 'like', 'love'];
+        const secretWords = {
+            'dance': 'dance', 'party': 'dance', 'wiggle': 'dance',
+            'cat': 'cat_unlock', 'meow': 'cat_unlock',
+            'hack': 'matrix_unlock', 'code': 'matrix_unlock', 'matrix': 'matrix_unlock',
+            'invisible': 'invisible', 'ghost': 'invisible',
+            'shake': 'shake',
+        };
+
+        const state = {
+            status: 'idle',
+            friendship: 10,
+            confusedCount: 0,
+            showInventory: false,
+            unlocked: { hat: false, tophat: false, nose: false, ears: false, matrix: false, golden: false },
+            equipped: { hat: false, tophat: false, nose: false, ears: false, matrix: false, golden: false },
+            effect: ''
+        };
+
+        const els = {
+            body: document.getElementById('body'),
+            container: document.getElementById('container'),
+            matrixOverlay: document.getElementById('matrix-overlay'),
+            stan: document.getElementById('stan'),
+            inventoryPanel: document.getElementById('inventory-panel'),
+            inventoryGrid: document.getElementById('inventory-grid'),
+            friendshipText: document.getElementById('friendship-text'),
+            friendshipBar: document.getElementById('friendship-bar'),
+            friendshipBg: document.getElementById('friendship-bg'),
+            input: document.getElementById('input-text'),
+            submitBtn: document.getElementById('submit-btn'),
+            invBtn: document.getElementById('inventory-btn'),
+            closeInvBtn: document.getElementById('close-inventory-btn'),
+            parts: {
+                eyebrowLeft: document.getElementById('eyebrow-left'),
+                eyebrowRight: document.getElementById('eyebrow-right'),
+                mouth: document.getElementById('stan-mouth'),
+                tearLeft: document.getElementById('tear-left'),
+                tearRight: document.getElementById('tear-right'),
+                pupilLeft: document.getElementById('pupil-left'),
+                pupilRight: document.getElementById('pupil-right'),
+                arm: document.getElementById('stan-arm'),
+                handWrapper: document.getElementById('hand-item-wrapper'),
+                iconHappy: document.getElementById('icon-happy'),
+                iconSad: document.getElementById('icon-sad'),
+                iconConfused: document.getElementById('icon-confused'),
+                hair: document.getElementById('stan-hair'),
+                naturalNose: document.getElementById('stan-nose'),
+                accHat: document.getElementById('acc-hat'),
+                accTophat: document.getElementById('acc-tophat'),
+                accEars: document.getElementById('acc-ears'),
+                accNose: document.getElementById('acc-nose'),
+            }
+        };
+
+        function init() {
+            renderInventory();
+            updateStanVisuals();
+            
+            els.matrixOverlay.innerHTML = Array(2000).fill(0).map(() => Math.random() > 0.5 ? '1' : '0').join(' ');
+
+            els.submitBtn.addEventListener('click', tellStan);
+            els.input.addEventListener('keydown', (e) => {
+                if (e.key === 'Enter') tellStan();
+            });
+            els.invBtn.addEventListener('click', () => {
+                state.showInventory = !state.showInventory;
+                updateInventoryPanel();
+            });
+            els.closeInvBtn.addEventListener('click', () => {
+                state.showInventory = false;
+                updateInventoryPanel();
+            });
         }
 
-        const root = ReactDOM.createRoot(document.getElementById('root'));
-        root.render(<App />);
+        function tellStan() {
+            const text = els.input.value.toLowerCase().trim();
+            if (!text) return;
+
+            if (text.includes('hair') && (text.includes('nice') || text.includes('cool') || text.includes('love') || text.includes('great') || text.includes('good') || text.includes('pretty'))) {
+                setState('happy');
+                updateFriendship(10);
+                unlockItem('tophat');
+                els.input.value = '';
+                return;
+            }
+
+            if (secretWords[text]) {
+                const action = secretWords[text];
+                if (action === 'matrix_unlock') unlockItem('matrix');
+                else if (action === 'cat_unlock') {
+                    unlockItem('ears');
+                    setState('happy');
+                } else {
+                    setEffect(action);
+                    setTimeout(() => setEffect(''), 2000);
+                }
+                els.input.value = '';
+                return;
+            }
+
+            const isSad = sadWords.some(word => text.includes(word));
+            const isHappy = happyWords.some(word => text.includes(word));
+
+            if (isSad) {
+                setState('sad');
+                updateFriendship(-15);
+            } else if (isHappy) {
+                setState('happy');
+                updateFriendship(10);
+            } else {
+                setState('confused');
+                state.confusedCount++;
+                if (state.confusedCount >= 3) unlockItem('nose');
+            }
+            els.input.value = '';
+        }
+
+        function setState(newStatus) {
+            state.status = newStatus;
+            updateStanVisuals();
+        }
+
+        function setEffect(eff) {
+            state.effect = eff;
+            updateStanVisuals();
+        }
+
+        function updateFriendship(amount) {
+            let newVal = Math.max(0, Math.min(100, state.friendship + amount));
+            if (newVal >= 50 && state.friendship < 50) unlockItem('hat');
+            if (newVal >= 100 && state.friendship < 100) unlockItem('golden');
+            state.friendship = newVal;
+            
+            els.friendshipText.innerText = state.friendship + '%';
+            els.friendshipBar.style.width = state.friendship + '%';
+            
+            let color = '#2ecc71';
+            if (state.equipped.matrix) color = '#00ff00';
+            else if (state.friendship < 30) color = '#e74c3c';
+            else if (state.friendship < 70) color = '#f1c40f';
+            
+            els.friendshipBar.style.backgroundColor = color;
+            els.friendshipBg.className = `w-full h-3 rounded-full overflow-hidden ${state.equipped.matrix ? 'bg-[#003300]' : 'bg-gray-200'}`;
+        }
+
+        function unlockItem(itemId) {
+            if (!state.unlocked[itemId]) {
+                state.unlocked[itemId] = true;
+                alert(`Unlocked: ${ITEMS.find(i => i.id === itemId).name}!`);
+                renderInventory();
+            }
+        }
+
+        function toggleEquip(itemId, forceEquip = false) {
+            if (!state.unlocked[itemId]) return;
+            
+            const itemMeta = ITEMS.find(i => i.id === itemId);
+            
+            if (state.equipped[itemId] && !forceEquip) {
+                state.equipped[itemId] = false;
+            } else {
+                ITEMS.filter(i => i.slot === itemMeta.slot).forEach(i => {
+                    state.equipped[i.id] = false;
+                });
+                state.equipped[itemId] = true;
+            }
+            
+            renderInventory();
+            updateStanVisuals();
+            updateFriendship(0); 
+        }
+
+        function updateInventoryPanel() {
+            if (state.showInventory) {
+                els.inventoryPanel.classList.remove('translate-y-full');
+                els.inventoryPanel.classList.add('translate-y-0');
+            } else {
+                els.inventoryPanel.classList.remove('translate-y-0');
+                els.inventoryPanel.classList.add('translate-y-full');
+            }
+        }
+
+        function renderInventory() {
+            els.inventoryGrid.innerHTML = '';
+            ITEMS.forEach(item => {
+                const isUnlocked = state.unlocked[item.id];
+                const isEquipped = state.equipped[item.id];
+                
+                const card = document.createElement('div');
+                let classes = 'item-card p-3 rounded-xl border-2 cursor-pointer flex flex-col items-center text-center relative ';
+                
+                if (!isUnlocked) {
+                    classes += 'locked bg-gray-50 border-gray-100';
+                } else if (isEquipped) {
+                    classes += 'bg-blue-50 border-blue-400 ring-1 ring-blue-400';
+                } else {
+                    classes += 'bg-white border-gray-200 hover:border-blue-200';
+                }
+                card.className = classes;
+                card.onclick = () => toggleEquip(item.id);
+
+                let iconHtml = '';
+                switch(item.id) {
+                    case 'hat': iconHtml = '<div class="w-8 h-8 relative"><div class="w-0 h-0 border-l-[10px] border-l-transparent border-r-[10px] border-r-transparent border-b-[25px] border-b-[#3498db] mx-auto"></div></div>'; break;
+                    case 'tophat': iconHtml = '<div class="w-8 h-8 relative flex flex-col items-center justify-end"><div class="w-6 h-6 bg-black"></div><div class="w-10 h-1 bg-black"></div></div>'; break;
+                    case 'nose': iconHtml = '<div class="w-4 h-4 bg-red-500 rounded-full mx-auto mt-2 border border-red-700"></div>'; break;
+                    case 'ears': iconHtml = '<div class="flex justify-center gap-1 mt-2"><div class="w-0 h-0 border-l-[6px] border-l-transparent border-r-[6px] border-r-transparent border-b-[12px] border-b-[#333]"></div><div class="w-0 h-0 border-l-[6px] border-l-transparent border-r-[6px] border-r-transparent border-b-[12px] border-b-[#333]"></div></div>'; break;
+                    case 'golden': iconHtml = '<div class="w-6 h-6 rounded-full bg-gradient-to-br from-[#ffd700] to-[#f1c40f] mx-auto mt-1 border-2 border-white shadow-sm"></div>'; break;
+                    case 'matrix': iconHtml = '<div class="text-[10px] font-mono leading-none text-center mt-1 font-bold text-green-600">101<br/>010</div>'; break;
+                }
+
+                let lockOverlay = '';
+                if (!isUnlocked) {
+                    lockOverlay = `<div class="absolute inset-0 flex items-center justify-center z-10 text-gray-400 padlock-icon">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" viewBox="0 0 20 20" fill="currentColor">
+                            <path fill-rule="evenodd" d="M5 9V7a5 5 0 0110 0v2a2 2 0 012 2v5a2 2 0 01-2 2H5a2 2 0 01-2-2v-5a2 2 0 012-2zm8-2v2H7V7a3 3 0 016 0z" clip-rule="evenodd" />
+                        </svg>
+                    </div>`;
+                }
+
+                card.innerHTML = `
+                    ${lockOverlay}
+                    <div class="h-10 w-full flex items-center justify-center icon mb-1">${iconHtml}</div>
+                    <div class="text-sm font-bold leading-tight">${item.name}</div>
+                    <div class="text-[10px] text-gray-500 mt-1 leading-tight">${item.desc}</div>
+                `;
+                els.inventoryGrid.appendChild(card);
+            });
+        }
+
+        function updateStanVisuals() {
+            const s = state.status;
+            const eq = state.equipped;
+            const eff = state.effect;
+
+            if (eq.matrix) {
+                els.container.classList.add('matrix-mode');
+                els.container.classList.remove('bg-white');
+                els.body.classList.add('bg-black');
+                els.body.classList.remove('bg-[#f0f2f5]');
+                els.matrixOverlay.classList.remove('hidden');
+                els.invBtn.classList.add('bg-[#003300]', 'text-green-400');
+                els.invBtn.classList.remove('bg-gray-100', 'text-gray-600');
+            } else {
+                els.container.classList.remove('matrix-mode');
+                els.container.classList.add('bg-white');
+                els.body.classList.remove('bg-black');
+                els.body.classList.add('bg-[#f0f2f5]');
+                els.matrixOverlay.classList.add('hidden');
+                els.invBtn.classList.remove('bg-[#003300]', 'text-green-400');
+                els.invBtn.classList.add('bg-gray-100', 'text-gray-600');
+            }
+
+            if (eq.golden) els.stan.classList.add('golden-skin');
+            else els.stan.classList.remove('golden-skin');
+
+            els.stan.classList.remove('animate-dance', 'animate-shake', 'opacity-20');
+            if (eff === 'dance') els.stan.classList.add('animate-dance');
+            if (eff === 'shake') els.stan.classList.add('animate-shake');
+            if (eff === 'invisible') els.stan.classList.add('opacity-20');
+
+            if (eq.hat) els.parts.accHat.classList.remove('hidden'); else els.parts.accHat.classList.add('hidden');
+            if (eq.tophat) els.parts.accTophat.classList.remove('hidden'); else els.parts.accTophat.classList.add('hidden');
+            if (eq.ears) els.parts.accEars.classList.remove('hidden'); else els.parts.accEars.classList.add('hidden');
+            if (eq.nose) els.parts.accNose.classList.remove('hidden'); else els.parts.accNose.classList.add('hidden');
+
+            if (eq.hat) els.parts.hair.classList.add('hidden'); else els.parts.hair.classList.remove('hidden');
+            if (eq.nose) els.parts.naturalNose.classList.add('hidden'); else els.parts.naturalNose.classList.remove('hidden');
+
+            els.parts.eyebrowLeft.className = `absolute top-[28px] left-[36px] w-[25px] h-[5px] bg-[#333] z-[4] rounded-full transition-transform duration-300 ${
+                s === 'happy' ? '-translate-y-1 rotate-[-5deg]' :
+                s === 'sad' ? 'rotate-[-15deg] translate-y-1' :
+                s === 'confused' ? '-translate-y-2 rotate-[-20deg]' : ''
+            }`;
+            els.parts.eyebrowRight.className = `absolute top-[28px] right-[36px] w-[25px] h-[5px] bg-[#333] z-[4] rounded-full transition-transform duration-300 ${
+                s === 'happy' ? '-translate-y-1 rotate-[5deg]' :
+                s === 'sad' ? 'rotate-[15deg] translate-y-1' :
+                s === 'confused' ? 'translate-y-0 rotate-[0deg]' : ''
+            }`;
+
+            els.parts.mouth.className = `absolute left-1/2 -translate-x-1/2 transition-all duration-300 z-[3] ${
+                s === 'happy' ? 'w-[30px] h-[20px] bg-transparent border-b-[4px] border-[#333] rounded-b-full bottom-[13px]' :
+                s === 'sad' ? 'w-[30px] h-[20px] bg-transparent border-t-[4px] border-[#333] rounded-t-full bottom-[4px]' :
+                s === 'confused' ? 'w-[20px] h-[4px] bg-[#333] rounded-[2px] bottom-[16px] -rotate-6' :
+                'w-[30px] h-[4px] bg-[#333] rounded-[2px] bottom-[16px]'
+            }`;
+
+            if (s === 'sad') {
+                els.parts.tearLeft.classList.remove('h-0', 'opacity-0');
+                els.parts.tearLeft.classList.add('h-[40px]', 'opacity-100');
+                els.parts.tearRight.classList.remove('h-0', 'opacity-0');
+                els.parts.tearRight.classList.add('h-[40px]', 'opacity-100');
+                els.parts.pupilLeft.classList.add('translate-y-[2px]');
+                els.parts.pupilRight.classList.add('translate-y-[2px]');
+            } else {
+                els.parts.tearLeft.classList.add('h-0', 'opacity-0');
+                els.parts.tearLeft.classList.remove('h-[40px]', 'opacity-100');
+                els.parts.tearRight.classList.add('h-0', 'opacity-0');
+                els.parts.tearRight.classList.remove('h-[40px]', 'opacity-100');
+                els.parts.pupilLeft.classList.remove('translate-y-[2px]');
+                els.parts.pupilRight.classList.remove('translate-y-[2px]');
+                if (s === 'happy') {
+                    els.parts.pupilLeft.classList.add('translate-y-[-2px]');
+                    els.parts.pupilRight.classList.add('translate-y-[-2px]');
+                } else {
+                    els.parts.pupilLeft.classList.remove('translate-y-[-2px]');
+                    els.parts.pupilRight.classList.remove('translate-y-[-2px]');
+                }
+            }
+
+            if (s === 'idle') {
+                els.parts.arm.classList.add('opacity-0', 'rotate-0');
+                els.parts.arm.classList.remove('opacity-100', 'rotate-[-140deg]', 'rotate-[-20deg]');
+                els.parts.handWrapper.classList.add('opacity-0', 'scale-0');
+                els.parts.handWrapper.classList.remove('opacity-100', 'scale-100', 'rotate-[140deg]', 'rotate-[20deg]');
+            } else {
+                els.parts.arm.classList.remove('opacity-0', 'rotate-0');
+                els.parts.arm.classList.add('opacity-100');
+                els.parts.handWrapper.classList.remove('opacity-0', 'scale-0');
+                els.parts.handWrapper.classList.add('opacity-100', 'scale-100');
+
+                if (s === 'happy' || s === 'confused') {
+                    els.parts.arm.classList.add('rotate-[-140deg]');
+                    els.parts.arm.classList.remove('rotate-[-20deg]');
+                    els.parts.handWrapper.classList.add('rotate-[140deg]');
+                    els.parts.handWrapper.classList.remove('rotate-[20deg]');
+                } else if (s === 'sad') {
+                    els.parts.arm.classList.add('rotate-[-20deg]');
+                    els.parts.arm.classList.remove('rotate-[-140deg]');
+                    els.parts.handWrapper.classList.add('rotate-[20deg]');
+                    els.parts.handWrapper.classList.remove('rotate-[140deg]');
+                }
+            }
+
+            els.parts.iconHappy.classList.add('hidden');
+            els.parts.iconSad.classList.add('hidden');
+            els.parts.iconConfused.classList.add('hidden');
+
+            if (s === 'happy') els.parts.iconHappy.classList.remove('hidden');
+            if (s === 'sad') els.parts.iconSad.classList.remove('hidden');
+            if (s === 'confused') els.parts.iconConfused.classList.remove('hidden');
+        }
+
+        init();
     </script>
 </body>
 </html>

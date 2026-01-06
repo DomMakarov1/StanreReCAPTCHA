@@ -2,8 +2,8 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Stan's reReCAPTCHA - Tamagotchi Edition</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Stan reReCAPTCHA v4</title>
     
     <script src="https://cdn.tailwindcss.com"></script>
     
@@ -32,6 +32,14 @@
         }
         .animate-shake { animation: shake 0.2s infinite; }
 
+        @keyframes rps-shake {
+            0% { transform: rotate(0deg); }
+            25% { transform: rotate(-40deg); }
+            75% { transform: rotate(10deg); }
+            100% { transform: rotate(0deg); }
+        }
+        .animate-rps { animation: rps-shake 0.5s infinite; }
+
         @keyframes backflip {
             0% { transform: rotate(0deg) translateY(0); }
             40% { transform: rotate(-180deg) translateY(-60px); }
@@ -39,13 +47,6 @@
             100% { transform: rotate(-360deg) translateY(0); }
         }
         .animate-backflip { animation: backflip 1s ease-in-out; }
-
-        @keyframes fire-rise {
-            0% { transform: translateY(0) scale(1); opacity: 0.8; }
-            50% { opacity: 1; }
-            100% { transform: translateY(-40px) scale(0); opacity: 0; }
-        }
-        .fire-flame { animation: fire-rise 1s infinite ease-out; }
 
         @keyframes zzz-float {
             0% { transform: translate(0, 0) scale(0.5); opacity: 0; }
@@ -65,10 +66,6 @@
             100% { transform: translate(0); }
         }
 
-        @keyframes float-up {
-            0% { transform: translateY(0) scale(1); opacity: 1; }
-            100% { transform: translateY(-100px) scale(0); opacity: 0; }
-        }
         .particle { pointer-events: none; position: absolute; z-index: 50; }
         
         /* --- MODES --- */
@@ -85,6 +82,12 @@
         .matrix-mode button:hover { background-color: #00ff00 !important; color: #000 !important; }
         .matrix-mode .inventory-panel { background-color: #111 !important; color: #00ff00 !important; }
         
+        /* Night Mode Background */
+        .night-bg { background-color: #1a2533 !important; }
+        .night-mode { background-color: rgba(255,255,255,0.9) !important; box-shadow: 0 0 30px rgba(255, 255, 255, 0.1) !important; }
+        .night-bg #prompt-text { color: white !important; opacity: 0.8; }
+        .night-bg #captcha-label { color: #8a9bbd !important; }
+
         .golden-skin .head, .golden-skin .ear, .golden-skin .neck, .golden-skin .hand, .golden-skin .nose {
             background: linear-gradient(135deg, #ffd700, #f1c40f, #ffed86) !important;
             box-shadow: inset 0 0 10px rgba(255, 255, 0, 0.5);
@@ -113,6 +116,7 @@
             z-index: 70;
             box-shadow: 2px 2px 0px rgba(0,0,0,0.1);
             animation: pop-in 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+            color: #333;
         }
         .speech-bubble::after {
             content: '';
@@ -142,11 +146,11 @@
         }
     </style>
 </head>
-<body id="body" class="min-h-screen flex items-center justify-center font-sans selection:bg-[#5dade2] selection:text-white transition-colors duration-500 bg-[#f0f2f5]">
+<body id="body" class="min-h-screen flex items-center justify-center font-sans selection:bg-[#5dade2] selection:text-white transition-colors duration-1000 bg-[#f0f2f5]">
 
     <div id="matrix-overlay" class="fixed inset-0 pointer-events-none opacity-20 z-0 overflow-hidden text-[#00ff00] font-mono text-xs break-all leading-3 hidden"></div>
     <div id="particle-container" class="fixed inset-0 pointer-events-none z-50 overflow-hidden"></div>
-
+    
     <!-- DEV TOOLS -->
     <div class="fixed top-4 right-4 z-[200] flex flex-col items-end gap-2">
         <button id="dev-toggle" class="bg-gray-800 text-white text-[10px] px-3 py-1 rounded opacity-50 hover:opacity-100 shadow-md font-mono">Dev Tools</button>
@@ -161,15 +165,6 @@
 
     <div id="container" class="relative p-10 rounded-[20px] shadow-[0_10px_25px_rgba(0,0,0,0.1)] flex flex-col items-center w-[450px] transition-all duration-300 z-10 overflow-visible bg-white">
         
-        <!-- Fire Effect -->
-        <div id="fire-container" class="absolute bottom-0 left-0 w-full h-[120px] pointer-events-none z-50 flex justify-center hidden opacity-80 overflow-hidden rounded-b-[20px]">
-            <div class="fire-flame w-10 h-10 bg-orange-500 rounded-full blur-md absolute bottom-[-10px] left-[20%]" style="animation-delay: 0.1s; background: radial-gradient(circle, yellow, red);"></div>
-            <div class="fire-flame w-14 h-14 bg-orange-600 rounded-full blur-md absolute bottom-[-15px] left-[35%]" style="animation-delay: 0.2s; background: radial-gradient(circle, orange, red);"></div>
-            <div class="fire-flame w-12 h-12 bg-red-500 rounded-full blur-md absolute bottom-[-10px] left-[50%]" style="animation-delay: 0.4s; background: radial-gradient(circle, yellow, red);"></div>
-            <div class="fire-flame w-16 h-16 bg-orange-500 rounded-full blur-md absolute bottom-[-20px] left-[60%]" style="animation-delay: 0s; background: radial-gradient(circle, orange, red);"></div>
-            <div class="fire-flame w-10 h-10 bg-yellow-500 rounded-full blur-md absolute bottom-[-5px] left-[75%]" style="animation-delay: 0.3s; background: radial-gradient(circle, yellow, orange);"></div>
-        </div>
-
         <!-- Inventory Button -->
         <div class="absolute top-4 left-1/2 -translate-x-1/2 z-20 flex items-center gap-2">
             <!-- Draggable Food (Visible when hungry) -->
@@ -227,6 +222,24 @@
                 <div class="w-[70px] h-[10px] bg-[#111] -mt-1 rounded-sm"></div>
             </div>
 
+            <!-- Redesigned Crown -->
+            <div id="acc-crown" class="absolute top-[-30px] left-1/2 -translate-x-1/2 z-[60] hidden">
+                <div class="flex">
+                    <div class="w-0 h-0 border-l-[8px] border-r-[8px] border-b-[19px] border-l-transparent border-r-transparent border-b-yellow-400"></div>
+                    <div class="w-0 h-0 border-l-[8px] border-r-[8px] border-b-[19px] border-l-transparent border-r-transparent border-b-yellow-400"></div>
+                    <div class="w-0 h-0 border-l-[8px] border-r-[8px] border-b-[19px] border-l-transparent border-r-transparent border-b-yellow-400"></div>
+                </div>
+                <div class="w-full h-[26px] bg-yellow-400"></div>
+            </div>
+            
+            <!-- Nightcap -->
+            <div id="acc-nightcap" class="absolute top-[-25px] left-1/2 -translate-x-1/2 z-[60] hidden">
+                 <div class="relative">
+                    <div class="w-0 h-0 border-l-[25px] border-l-transparent border-r-[25px] border-r-transparent border-b-[60px] border-b-[#87ceeb] transform rotate-12 origin-bottom"></div>
+                    <div class="absolute -top-1 -right-8 w-6 h-6 bg-white rounded-full"></div>
+                 </div>
+            </div>
+
             <div id="acc-ears" class="hidden">
                 <div class="absolute -top-[5px] left-[15px] w-0 h-0 border-l-[15px] border-l-transparent border-r-[15px] border-r-transparent border-b-[30px] border-b-[#333] transform -rotate-[40deg] z-[2]">
                     <div class="absolute top-[12px] -left-[5px] w-0 h-0 border-l-[5px] border-l-transparent border-r-[5px] border-r-transparent border-b-[10px] border-b-pink-400"></div>
@@ -237,12 +250,14 @@
             </div>
 
             <!-- Body Parts -->
-            <div id="stan-hair" class="absolute -top-[15px] left-1/2 -translate-x-1/2 w-[20px] h-[25px] bg-[#333] rounded-t-[50%] z-[3] before:absolute before:bottom-0 before:-left-[5px] before:w-[10px] before:h-[10px] before:bg-[#333] before:rounded-full"></div>
+            <!-- Hair moved to Z-22 to be above Head(20) but below Hats(60) -->
+            <div id="stan-hair" class="absolute -top-[15px] left-1/2 -translate-x-1/2 w-[20px] h-[25px] bg-[#333] rounded-t-[50%] z-[22] before:absolute before:bottom-0 before:-left-[5px] before:w-[10px] before:h-[10px] before:bg-[#333] before:rounded-full"></div>
 
             <div id="eyebrow-left" class="absolute top-[28px] left-[36px] w-[25px] h-[5px] bg-[#333] z-[4] rounded-full transition-transform duration-300"></div>
             <div id="eyebrow-right" class="absolute top-[28px] right-[36px] w-[25px] h-[5px] bg-[#333] z-[4] rounded-full transition-transform duration-300"></div>
 
-            <div class="absolute top-[35px] left-1/2 -translate-x-1/2 w-[80px] h-[35px] z-[5] flex justify-center">
+            <!-- Sunglasses - Increased Z-Index to sit above Head (20) -->
+            <div id="stan-sunglasses" class="absolute top-[35px] left-1/2 -translate-x-1/2 w-[80px] h-[35px] z-[25] flex justify-center">
                 <div class="w-[40px] h-full border-[5px] border-black border-r-[2.5px] bg-transparent rounded-b-[12px]"></div>
                 <div class="w-[40px] h-full border-[5px] border-black border-l-[2.5px] bg-transparent rounded-b-[12px]"></div>
                 <div class="absolute top-0 left-0 w-full h-[5px] bg-black"></div>
@@ -251,7 +266,12 @@
             <div class="ear absolute top-[50px] w-[20px] h-[25px] bg-[#eebb99] rounded-full z-[1] left-[10px]"></div>
             <div class="ear absolute top-[50px] w-[20px] h-[25px] bg-[#eebb99] rounded-full z-[1] right-[10px]"></div>
 
-            <div class="head relative w-[100px] h-[110px] bg-[#eebb99] rounded-[50px_50px_20px_20px] mx-auto z-[2]">
+            <!-- HEAD: Increased Z-Index to 20 to sit above suit -->
+            <div class="head relative w-[100px] h-[110px] bg-[#eebb99] rounded-[50px_50px_20px_20px] mx-auto z-[20]">
+                <!-- Sweat Drops -->
+                <div id="sweat-1" class="absolute top-[10px] right-[15px] w-[6px] h-[8px] bg-blue-300 rounded-full opacity-0 z-50"></div>
+                <div id="sweat-2" class="absolute top-[20px] left-[10px] w-[5px] h-[7px] bg-blue-300 rounded-full opacity-0 z-50" style="animation-delay: 0.5s;"></div>
+
                 <div id="eye-left" class="absolute top-[40px] left-[19px] w-[28px] h-[22px] bg-white rounded-b-[15px] z-[4] overflow-hidden flex justify-center items-center">
                     <div id="pupil-left" class="w-[10px] h-[10px] bg-black rounded-full transition-transform duration-300 translate-y-[-2px]"></div>
                 </div>
@@ -264,6 +284,11 @@
                 <div id="acc-nose" class="absolute top-[72px] left-1/2 -translate-x-1/2 w-[18px] h-[18px] bg-red-500 rounded-full z-[5] border border-red-700 shadow-sm hidden">
                     <div class="absolute top-1 left-1 w-[6px] h-[4px] bg-white rounded-full opacity-50"></div>
                 </div>
+
+                <!-- Monocle - Centered over right eye (51px, 33px) -> top 36, right 18 -->
+                <div id="acc-monocle" class="absolute top-[36px] right-[18px] w-[30px] h-[30px] rounded-full border-2 border-yellow-600 z-[50] bg-blue-100/30 hidden">
+                    <div class="absolute top-[24px] right-0 w-[2px] h-[18px] bg-yellow-600 rotate-12"></div>
+                </div>
                 
                 <div id="stan-mouth" class="absolute left-1/2 -translate-x-1/2 transition-all duration-300 z-[3] h-[4px] bg-[#333] rounded-[2px] bottom-[18px] w-[30px]"></div>
 
@@ -273,6 +298,21 @@
 
             <div class="relative w-[100px] h-[70px] bg-black -mt-[10px] mx-auto rounded-[10px_10px_0_0] z-[3]">
                 <div class="neck absolute -top-[5px] left-1/2 -translate-x-1/2 w-[30px] h-[10px] bg-[#eebb99] z-[4]"></div>
+                
+                <div id="acc-suit" class="absolute inset-0 z-[5] hidden">
+                    <div class="absolute top-0 left-1/2 -translate-x-1/2 w-0 h-0 border-l-[20px] border-r-[20px] border-t-[40px] border-l-transparent border-r-transparent border-t-white"></div>
+                    <!-- Tie moved up to -5px -->
+                    <div class="absolute top-[-5px] left-1/2 -translate-x-1/2 w-[6px] h-[40px] bg-red-700 rounded-b"></div>
+                </div>
+
+                <div id="acc-bowtie" class="absolute top-[10px] left-1/2 -translate-x-1/2 z-[50] hidden">
+                    <div class="flex items-center">
+                        <div class="w-0 h-0 border-t-[8px] border-t-transparent border-l-[12px] border-l-red-600 border-b-[8px] border-b-transparent"></div>
+                        <div class="w-3 h-3 bg-red-600 rounded-full -mx-1 relative z-10"></div>
+                        <div class="w-0 h-0 border-t-[8px] border-t-transparent border-r-[12px] border-r-red-600 border-b-[5px] border-b-transparent"></div>
+                    </div>
+                </div>
+
                 <div id="stan-arm" class="absolute top-[5px] -right-[15px] w-[25px] h-[80px] bg-black rounded-[10px] origin-top-center transition-all duration-500 ease-spring opacity-0 rotate-0">
                     <div class="hand absolute -bottom-[10px] left-0 w-[25px] h-[25px] bg-[#eebb99] rounded-full">
                         <div id="hand-item-wrapper" class="absolute -top-[40px] -left-[10px] w-[40px] h-[40px] transition-all duration-300 delay-200 opacity-0 scale-0 rotate-[20deg]">
@@ -280,7 +320,7 @@
                                 <svg viewBox="0 0 512 512" class="w-full h-full fill-[#2ecc71] drop-shadow-sm"><path d="M256 512A256 256 0 1 0 256 0a256 256 0 1 0 0 512zM369 209L241 337c-9.4 9.4-24.6 9.4-33.9 0l-64-64c-9.4-9.4-9.4-24.6 0-33.9s24.6-9.4 33.9 0l47 47L335 175c9.4-9.4 24.6-9.4 33.9 0s9.4 24.6 0 33.9z"/></svg>
                             </div>
                             <div id="icon-sad" class="hidden">
-                                <svg viewBox="0 0 512 512" class="w-full h-full fill-[#e74c3c] drop-shadow-sm"><path d="M256 512A256 256 0 1 0 256 0a256 256 0 1 0 0 512zM175 175c9.4-9.4 24.6-9.4 33.9 0l47 47 47-47c9.4-9.4 24.6-9.4 33.9 0s9.4 24.6 0 33.9l-47 47 47 47c9.4 9.4 9.4 24.6 0 33.9s-24.6 9.4-33.9 0l-47-47-47 47c-9.4 9.4-24.6 9.4-33.9 0s-9.4-24.6 0-33.9l47-47-47-47c-9.4-9.4-9.4-24.6 0-33.9z"/></svg>
+                                <svg viewBox="0 0 512 512" class="w-full h-full fill-[#e74c3c] drop-shadow-sm"><path d="M256 512A256 256 0 1 0 256 0a256 256 0 1 0 0 512zM175 175c9.4-9.4 24.6-9.4 33.9 0l47 47 47-47c9.4-9.4 24.6-9.4 33.9 0s9.4 24.6 0 33.9l-47 47 47 47c9.4 9.4 9.4 24.6 0 33.9s-24.6 9.4-33.9 0l-47-47-47 47c-9.4-9.4-24.6 9.4-33.9 0s-9.4-24.6 0-33.9l47-47-47-47c-9.4-9.4-9.4-24.6 0-33.9z"/></svg>
                             </div>
                             <div id="icon-confused" class="hidden">
                                 <svg viewBox="0 0 512 512" class="w-full h-full fill-[#95a5a6] drop-shadow-sm">
@@ -288,18 +328,23 @@
                                     <path d="M241 128h30c33.1 0 60 26.9 60 60 0 18.2-8.3 34.5-21.3 45.4-12.3 10.3-19.7 25.8-19.7 42.6v10h-48v-14c0-29.9 13.6-56.7 35.1-73.6 5-3.9 8.2-10 8.2-16.7 0-12.1-9.9-22-22-22h-22c-12.1 0-22 9.9-22 22v14h-48v-18c0-33.1 26.9-60 60-60zm16 256c13.3 0 24-10.7 24-24s-10.7-24-24-24-24 10.7-24 24 10.7 24 24 24z" fill="white" transform="translate(13, 20) scale(0.9)"/>
                                 </svg>
                             </div>
+                            <!-- Minigame Icons -->
+                            <div id="icon-rock" class="hidden text-3xl">🪨</div>
+                            <div id="icon-paper" class="hidden text-3xl">📄</div>
+                            <div id="icon-scissors" class="hidden text-3xl">✂️</div>
                         </div>
                     </div>
                 </div>
             </div>
 
-            <div class="w-[100px] h-[40px] bg-[#2980b9] mx-auto rounded-[0_0_20px_20px] z-[2]">
+            <!-- Pants - Added ID for coloring -->
+            <div id="stan-pants" class="w-[100px] h-[40px] bg-[#2980b9] mx-auto rounded-[0_0_20px_20px] z-[2]">
                 <div class="w-full h-[8px] bg-[#95a5a6]"></div>
             </div>
 
         </div>
 
-        <!-- Zzz Particles (Now outside of rotated stan div) -->
+        <!-- Zzz Particles -->
         <div id="zzz-container" class="absolute top-[160px] right-[100px] hidden z-[80]">
             <div class="zzz-symbol text-blue-400 font-bold text-xl absolute" style="animation-delay: 0s">Z</div>
             <div class="zzz-symbol text-blue-400 font-bold text-lg absolute top-2 right-2" style="animation-delay: 0.5s">z</div>
@@ -310,9 +355,9 @@
             Prove you're a human. Make Stan smile.
         </div>
 
-        <div class="flex gap-[10px] items-center w-full relative">
+        <div id="input-container" class="flex gap-[10px] items-center w-full relative transition-colors duration-1000 p-2 rounded-xl">
             <input id="input-text" type="text" placeholder="Say something nice..." autocomplete="off" class="flex-1 p-[6px_15px] border-[2px] border-[#ddd] rounded-[8px] outline-none transition-colors focus:border-[#3498db]" />
-            <div class="absolute -bottom-[20px] left-0 text-[10px] opacity-50">reReCAPTCHA 3.0</div>
+            <div id="captcha-label" class="absolute -bottom-[20px] left-0 text-[10px] opacity-50 transition-colors duration-1000">reReCAPTCHA 4.0</div>
             <button id="submit-btn" class="bg-[#5dade2] text-white p-[6px_20px] rounded-[8px] cursor-pointer font-semibold select-none transition-transform active:scale-95 hover:bg-[#3498db] whitespace-nowrap">Tell Stan</button>
         </div>
 
@@ -324,8 +369,11 @@
     </div>
 
     <script>
-        const STORAGE_KEY = 'stan_save_v2';
+        const STORAGE_KEY = 'stan_save_v4'; 
         const DAILY_CAP = 40; 
+        const HOURLY_MINIGAME_CAP = 15;
+        
+        let idleTimer = null; // Added timer variable
 
         // --- BRAIN DATA (Dictionary) ---
         const DICTIONARY = {
@@ -339,9 +387,13 @@
 
         const ITEMS = [
             { id: 'hat', name: 'Party Hat', desc: 'Reach 50% Friendship', slot: 'head' },
-            { id: 'tophat', name: 'Top Hat', desc: 'Compliment his hair', slot: 'head' }, 
+            { id: 'tophat', name: 'Top Hat', desc: 'Compliment his hair', slot: 'head' },
+            { id: 'crown', name: 'Gold Crown', desc: 'Treat Stan like royalty!', slot: 'head' },
             { id: 'ears', name: 'Cat Ears', desc: 'Speak the feline tongue', slot: 'head' },
-            { id: 'nose', name: 'Clown Nose', desc: 'Confuse Stan 3 times', slot: 'face' }, 
+            { id: 'nose', name: 'Clown Nose', desc: 'Confuse Stan 3 times', slot: 'face' },
+            { id: 'monocle', name: 'Monocle', desc: 'Use your vocabulary', slot: 'face' },
+            { id: 'bowtie', name: 'Bow Tie', desc: 'Mind your manners', slot: 'neck' },
+            { id: 'suit', name: 'Business Suit', desc: 'Ask for a job', slot: 'clothes' },
             { id: 'golden', name: 'Golden Skin', desc: 'Reach 100% Friendship', slot: 'skin' },
             { id: 'matrix', name: 'The Matrix', desc: 'Find the glitch', slot: 'skin' },
         ];
@@ -360,7 +412,12 @@
             'invisible': 'invisible', 'ghost': 'invisible',
             'shake': 'shake',
             'flip': 'backflip', 'backflip': 'backflip',
-            'fire': 'fire', 'burn': 'fire', 'flame': 'fire',
+            'king': 'crown_unlock', 'ruler': 'crown_unlock',
+            'fancy': 'monocle_unlock', 'classy': 'monocle_unlock',
+            'gentleman': 'bowtie_unlock', 'dapper': 'bowtie_unlock',
+            'job': 'suit_unlock', 'work': 'suit_unlock', 'business': 'suit_unlock', 'hired': 'suit_unlock',
+            'guess': 'game_guess', 'number': 'game_guess',
+            'rock': 'game_rps_rock', 'paper': 'game_rps_paper', 'scissors': 'game_rps_scissors', 'play': 'game_rps_rock'
         };
 
         const defaultState = {
@@ -368,14 +425,19 @@
             friendship: 10,
             confusedCount: 0,
             showInventory: false,
-            unlocked: { hat: false, tophat: false, nose: false, ears: false, matrix: false, golden: false },
-            equipped: { hat: false, tophat: false, nose: false, ears: false, matrix: false, golden: false },
+            unlocked: { hat: false, tophat: false, crown: false, nose: false, ears: false, monocle: false, bowtie: false, suit: false, matrix: false, golden: false },
+            equipped: { hat: false, tophat: false, crown: false, nose: false, ears: false, monocle: false, bowtie: false, suit: false, matrix: false, golden: false },
             effect: '',
             lastLogin: Date.now(),
             dailyPoints: 0,
             dailyDate: new Date().toDateString(),
             currentTask: null,
-            isSleeping: false
+            isSleeping: false,
+            activeMinigame: null, // 'guess', 'rps'
+            pendingMinigame: null, // 'guess', 'rps'
+            targetNumber: null,
+            minigameHistory: { points: 0, lastReset: Date.now() },
+            lastInput: ''
         };
 
         let state = JSON.parse(JSON.stringify(defaultState)); // Deep copy
@@ -391,15 +453,15 @@
             friendshipText: document.getElementById('friendship-text'),
             friendshipBar: document.getElementById('friendship-bar'),
             friendshipBg: document.getElementById('friendship-bg'),
+            inputContainer: document.getElementById('input-container'),
+            captchaLabel: document.getElementById('captcha-label'),
             input: document.getElementById('input-text'),
             submitBtn: document.getElementById('submit-btn'),
             invBtn: document.getElementById('inventory-btn'),
             closeInvBtn: document.getElementById('close-inventory-btn'),
-            fireContainer: document.getElementById('fire-container'),
             resetBtn: document.getElementById('reset-save-btn'),
             speechBubble: document.getElementById('speech-bubble'),
             zzz: document.getElementById('zzz-container'),
-            cobweb: document.getElementById('cobweb'), // Left in els but removed from DOM
             prompt: document.getElementById('prompt-text'),
             draggableFood: document.getElementById('draggable-food'),
             // Dev Tool Els
@@ -413,6 +475,7 @@
             parts: {
                 eyebrowLeft: document.getElementById('eyebrow-left'),
                 eyebrowRight: document.getElementById('eyebrow-right'),
+                sunglasses: document.getElementById('stan-sunglasses'),
                 eyeLeft: document.getElementById('eye-left'),
                 eyeRight: document.getElementById('eye-right'),
                 mouth: document.getElementById('stan-mouth'),
@@ -425,12 +488,23 @@
                 iconHappy: document.getElementById('icon-happy'),
                 iconSad: document.getElementById('icon-sad'),
                 iconConfused: document.getElementById('icon-confused'),
+                iconRock: document.getElementById('icon-rock'),
+                iconPaper: document.getElementById('icon-paper'),
+                iconScissors: document.getElementById('icon-scissors'),
                 hair: document.getElementById('stan-hair'),
                 naturalNose: document.getElementById('stan-nose'),
                 accHat: document.getElementById('acc-hat'),
                 accTophat: document.getElementById('acc-tophat'),
+                accCrown: document.getElementById('acc-crown'),
                 accEars: document.getElementById('acc-ears'),
                 accNose: document.getElementById('acc-nose'),
+                accMonocle: document.getElementById('acc-monocle'),
+                accBowtie: document.getElementById('acc-bowtie'),
+                accSuit: document.getElementById('acc-suit'),
+                accNightcap: document.getElementById('acc-nightcap'),
+                pants: document.getElementById('stan-pants'),
+                sweat1: document.getElementById('sweat-1'),
+                sweat2: document.getElementById('sweat-2'),
             }
         };
 
@@ -485,7 +559,6 @@
         }
 
         function playClickSound() {
-            // Subtle click
             initAudio();
             playTone(800, 'sine', 0.05, 0);
         }
@@ -567,6 +640,20 @@
             return score;
         }
 
+        function checkDayNight() {
+            const hour = new Date().getHours();
+            const isNight = hour >= 20 || hour < 6;
+            
+            if (isNight) {
+                els.body.classList.add('night-bg');
+                els.container.classList.add('night-mode'); 
+            } else {
+                els.body.classList.remove('night-bg');
+                els.container.classList.remove('night-mode');
+            }
+            updateStanVisuals(isNight);
+        }
+
         function checkDecay() {
             const now = Date.now();
             const hoursSince = (now - state.lastLogin) / (1000 * 60 * 60);
@@ -589,21 +676,38 @@
             if (hoursSince > 1) {
                 const loss = Math.min(20, Math.floor(hoursSince * 5));
                 if (loss > 0) {
-                    // Safe subtraction
                     state.friendship = Math.max(0, state.friendship - loss);
-                    console.log(`Decayed friendship by ${loss}%`);
                 }
+            }
+            saveGame();
+        }
+        
+        function checkMinigameCap() {
+            const now = Date.now();
+            if (now - state.minigameHistory.lastReset > 3600000) { // 1 hour
+                state.minigameHistory.points = 0;
+                state.minigameHistory.lastReset = now;
+            }
+        }
+        
+        function awardMinigamePoints(amount) {
+            checkMinigameCap();
+            const available = HOURLY_MINIGAME_CAP - state.minigameHistory.points;
+            const toAward = Math.min(amount, available);
+            
+            if (toAward > 0) {
+                state.minigameHistory.points += toAward;
+                updateFriendship(toAward, true);
             }
             saveGame();
         }
 
         function assignTask() {
-            // 30% chance to assign a task if none exists and he's awake
             if (!state.currentTask && !state.isSleeping && Math.random() < 0.3) {
                 state.currentTask = TASKS[Math.floor(Math.random() * TASKS.length)];
                 els.speechBubble.innerText = state.currentTask.text;
                 els.speechBubble.classList.remove('hidden');
-                setState('idle'); // Ensure neutral state when task is assigned
+                setState('idle');
             }
         }
 
@@ -611,23 +715,28 @@
             const savedData = loadSave();
             if (savedData) {
                 state = { ...defaultState, ...savedData };
+                state.unlocked = { ...defaultState.unlocked, ...(savedData.unlocked || {}) };
+                state.equipped = { ...defaultState.equipped, ...(savedData.equipped || {}) };
+                if(!state.minigameHistory) state.minigameHistory = { points: 0, lastReset: Date.now() };
                 
-                // --- FIX: Restore Logic for tasks missing 'type' ---
                 if (state.currentTask && !state.currentTask.type) {
                     const matched = TASKS.find(t => t.text === state.currentTask.text);
                     if (matched) state.currentTask = matched;
                 }
                 
-                // --- FIX: Ensure Friendship is a number ---
                 state.friendship = parseInt(state.friendship);
                 if(isNaN(state.friendship)) state.friendship = 10;
 
-                // Reset visual state on load to ensure arm is not stuck
                 state.status = 'idle';
                 state.effect = '';
+                state.activeMinigame = null;
+                state.pendingMinigame = null;
             }
             
             checkDecay();
+            checkDayNight();
+            setInterval(checkDayNight, 60000);
+
             renderInventory();
             updateStanVisuals();
             updateFriendship(0);
@@ -659,7 +768,7 @@
                 els.devPanel.classList.toggle('hidden');
             });
             els.devSleep.addEventListener('click', () => {
-                state.lastLogin = Date.now() - (25 * 60 * 60 * 1000); // 25 hours ago
+                state.lastLogin = Date.now() - (25 * 60 * 60 * 1000); 
                 checkDecay();
                 updateStanVisuals();
             });
@@ -670,18 +779,18 @@
                 saveGame();
             });
             els.devHunger.addEventListener('click', () => {
-                state.currentTask = TASKS[0]; // Hunger task
+                state.currentTask = TASKS[0]; 
                 els.speechBubble.innerText = state.currentTask.text;
                 els.speechBubble.classList.remove('hidden');
-                setState('idle'); // Ensure neutral state
-                updateStanVisuals(); // Update visuals to show/hide food
+                setState('idle');
+                updateStanVisuals();
                 saveGame();
             });
             els.devBored.addEventListener('click', () => {
-                state.currentTask = TASKS[1]; // Bored task
+                state.currentTask = TASKS[1];
                 els.speechBubble.innerText = state.currentTask.text;
                 els.speechBubble.classList.remove('hidden');
-                setState('idle'); // Ensure neutral state
+                setState('idle');
                 updateStanVisuals();
                 saveGame();
             });
@@ -700,6 +809,13 @@
                 startY = e.clientY;
                 e.target.style.cursor = 'grabbing';
             });
+            
+            // Touch events for mobile dragging
+            els.draggableFood.addEventListener('touchstart', (e) => {
+                isDragging = true;
+                startX = e.touches[0].clientX;
+                startY = e.touches[0].clientY;
+            });
 
             window.addEventListener('mousemove', (e) => {
                 if (!isDragging) return;
@@ -707,37 +823,41 @@
                 const dy = e.clientY - startY;
                 els.draggableFood.style.transform = `translate(${dx}px, ${dy}px) scale(1.2)`;
             });
+            
+            window.addEventListener('touchmove', (e) => {
+                if (!isDragging) return;
+                const dx = e.touches[0].clientX - startX;
+                const dy = e.touches[0].clientY - startY;
+                els.draggableFood.style.transform = `translate(${dx}px, ${dy}px) scale(1.2)`;
+            });
 
-            window.addEventListener('mouseup', (e) => {
+            window.addEventListener('mouseup', endDrag);
+            window.addEventListener('touchend', endDrag);
+
+            function endDrag() {
                 if (!isDragging) return;
                 isDragging = false;
                 els.draggableFood.style.cursor = 'grab';
                 
-                // Check collision with Stan
                 const foodRect = els.draggableFood.getBoundingClientRect();
                 const stanRect = els.stan.getBoundingClientRect();
 
-                // Simple collision detection
                 if (
                     foodRect.left < stanRect.right &&
                     foodRect.right > stanRect.left &&
                     foodRect.top < stanRect.bottom &&
                     foodRect.bottom > stanRect.top
                 ) {
-                    // Feed Stan
                     if (state.currentTask && state.currentTask.type === 'hunger') {
                         completeTask(true);
                     } else {
-                        // Not hungry but fed
                         setState('happy');
                         playHappySound();
                         createParticles('heart', stanRect.left + stanRect.width/2, stanRect.top);
                     }
                 }
-                
-                // Reset position
                 els.draggableFood.style.transform = 'translate(0, 0) scale(1)';
-            });
+            }
         }
 
         function completeTask(viaDrag = false) {
@@ -753,14 +873,99 @@
             saveGame();
         }
 
+        function playRPS(playerChoice) {
+            els.parts.arm.classList.add('animate-rps');
+            els.speechBubble.innerText = "Rock... Paper...";
+            els.speechBubble.classList.remove('hidden');
+
+            setTimeout(() => {
+                els.parts.arm.classList.remove('animate-rps');
+                const choices = ['rock', 'paper', 'scissors'];
+                const stanChoice = choices[Math.floor(Math.random() * 3)];
+                
+                els.parts.iconRock.classList.add('hidden');
+                els.parts.iconPaper.classList.add('hidden');
+                els.parts.iconScissors.classList.add('hidden');
+                
+                els.parts.arm.classList.add('rotate-[-140deg]');
+                els.parts.handWrapper.classList.add('scale-100', 'opacity-100', 'rotate-[140deg]');
+
+                if (stanChoice === 'rock') els.parts.iconRock.classList.remove('hidden');
+                else if (stanChoice === 'paper') els.parts.iconPaper.classList.remove('hidden');
+                else els.parts.iconScissors.classList.remove('hidden');
+
+                let result = '';
+                if (playerChoice === stanChoice) result = "Tie!";
+                else if (
+                    (playerChoice === 'rock' && stanChoice === 'scissors') ||
+                    (playerChoice === 'paper' && stanChoice === 'rock') ||
+                    (playerChoice === 'scissors' && stanChoice === 'paper')
+                ) {
+                    result = "You Win!";
+                    awardMinigamePoints(15);
+                    createParticles('confetti', window.innerWidth/2, window.innerHeight/2);
+                    playHappySound();
+                    setState('happy');
+                } else {
+                    result = "I Win!";
+                    playSadSound();
+                    setState('happy');
+                }
+                els.speechBubble.innerText = `${stanChoice.toUpperCase()}! ${result}`;
+                setTimeout(() => {
+                    state.activeMinigame = null;
+                    setState('idle');
+                    updateStanVisuals();
+                }, 3000);
+            }, 1500);
+        }
+
+        function playGuessNumber(input) {
+            const guess = parseInt(input);
+            if (isNaN(guess)) return;
+
+            if (guess === state.targetNumber) {
+                els.speechBubble.innerText = "Correct! You win!";
+                awardMinigamePoints(10);
+                playHappySound();
+                setState('happy');
+                setTimeout(() => {
+                    state.activeMinigame = null;
+                    state.targetNumber = null;
+                    setState('idle');
+                    els.speechBubble.classList.add('hidden');
+                }, 2000);
+            } else if (guess < state.targetNumber) {
+                els.speechBubble.innerText = "Higher!";
+                setState('confused');
+            } else {
+                els.speechBubble.innerText = "Lower!";
+                setState('confused');
+            }
+        }
+
         function processInput() {
             const text = els.input.value.toLowerCase().trim();
             if (!text) return;
+            
+            // Mobile Optimization: Close keyboard
+            if (window.innerWidth < 600) els.input.blur();
+
+            // Spam Protection
+            if (text === state.lastInput && !state.activeMinigame) {
+                // Special case: Don't change status to confused if spamming, just show bubble
+                // forcing update without changing main state to keep previous emotion or just flicker
+                els.speechBubble.innerText = "You just said that...";
+                els.speechBubble.classList.remove('hidden');
+                setTimeout(() => els.speechBubble.classList.add('hidden'), 1500);
+                return;
+            }
+            state.lastInput = text;
+
             const rect = els.stan.getBoundingClientRect();
             const centerX = rect.left + rect.width / 2;
             const centerY = rect.top + rect.height / 2;
 
-            // 1. Wake up logic
             if (state.isSleeping) {
                 if (text.includes('wake')) {
                     state.isSleeping = false;
@@ -769,31 +974,95 @@
                     els.speechBubble.classList.remove('hidden');
                     setTimeout(() => els.speechBubble.classList.add('hidden'), 2000);
                     updateStanVisuals();
-                } else {
-                    // els.speechBubble.innerText = "Zzz...";
-                    // els.speechBubble.classList.remove('hidden');
-                    // Removed per request "no textbox... until he wakes up"
                 }
                 els.input.value = '';
                 return;
             }
 
-            // 2. Secret Words (Instant Effects)
-            if (secretWords[text]) {
-                const action = secretWords[text];
-                if (action === 'matrix_unlock') unlockItem('matrix');
-                else if (action === 'cat_unlock') {
+            if (state.pendingMinigame) {
+                 if (['yes', 'sure', 'ok', 'yeah'].some(w => text.includes(w))) {
+                     state.activeMinigame = state.pendingMinigame;
+                     state.pendingMinigame = null;
+                     
+                     if (state.activeMinigame === 'guess') {
+                         state.targetNumber = Math.floor(Math.random() * 10) + 1;
+                         els.speechBubble.innerText = "I'm thinking of a number (1-10).";
+                         els.speechBubble.classList.remove('hidden');
+                     } else if (state.activeMinigame === 'rps') {
+                         els.speechBubble.innerText = "Okay! Type rock, paper, or scissors!";
+                         els.speechBubble.classList.remove('hidden');
+                     }
+                 } else {
+                     state.pendingMinigame = null;
+                     els.speechBubble.innerText = "Maybe later.";
+                     setTimeout(() => els.speechBubble.classList.add('hidden'), 2000);
+                 }
+                 els.input.value = '';
+                 return;
+            }
+
+            if (state.activeMinigame === 'guess') {
+                playGuessNumber(text);
+                els.input.value = '';
+                return;
+            }
+            if (state.activeMinigame === 'rps') {
+                 if (['rock', 'paper', 'scissors'].includes(text)) {
+                     playRPS(text);
+                 } else {
+                     els.speechBubble.innerText = "Type rock, paper, or scissors!";
+                 }
+                 els.input.value = '';
+                 return;
+            }
+
+            let foundAction = null;
+            for (const [key, action] of Object.entries(secretWords)) {
+                if (text.includes(key)) {
+                    foundAction = action;
+                    break;
+                }
+            }
+
+            if (foundAction) {
+                if (foundAction.startsWith('game_')) {
+                    if (foundAction.includes('rps')) {
+                        state.pendingMinigame = 'rps';
+                        els.speechBubble.innerText = "Play Rock Paper Scissors?";
+                    } else if (foundAction.includes('guess')) {
+                        state.pendingMinigame = 'guess';
+                        els.speechBubble.innerText = "Play Guess the Number?";
+                    }
+                    els.speechBubble.classList.remove('hidden');
+                    setState('confused');
+                } else if (foundAction === 'matrix_unlock') {
+                    unlockItem('matrix');
+                } else if (foundAction === 'cat_unlock') {
                     unlockItem('ears');
                     setState('happy');
+                } else if (foundAction === 'crown_unlock') {
+                    unlockItem('crown');
+                    setState('happy');
+                } else if (foundAction === 'monocle_unlock') {
+                    unlockItem('monocle');
+                    setState('happy');
+                } else if (foundAction === 'bowtie_unlock') {
+                    unlockItem('bowtie');
+                    setState('happy');
+                } else if (foundAction === 'suit_unlock') {
+                    unlockItem('suit');
+                    setState('happy');
                 } else {
-                    setEffect(action);
+                    setEffect(foundAction);
                     setTimeout(() => setEffect(''), 2000);
                 }
                 els.input.value = '';
                 return;
             }
 
-            // 3. Task Checking
+            if (text.split(' ').some(w => w.length >= 10)) unlockItem('monocle');
+            if (text.includes('please') || text.includes('thank')) unlockItem('bowtie');
+
             if (state.currentTask) {
                 const completed = state.currentTask.keywords.some(k => text.includes(k));
                 if (completed) {
@@ -802,7 +1071,6 @@
                 }
             }
 
-            // 4. Special Unlock: Top Hat
             if (text.includes('hair') && calculateSentiment(text) > 0) {
                 setState('happy');
                 updateFriendship(10);
@@ -812,7 +1080,6 @@
                 return;
             }
 
-            // 5. NLP Sentiment Logic
             const score = calculateSentiment(text);
 
             if (score < 0) {
@@ -839,6 +1106,22 @@
         function setState(newStatus) {
             state.status = newStatus;
             updateStanVisuals();
+
+            // Auto-hide arm and icons after 3 seconds
+            if (idleTimer) clearTimeout(idleTimer);
+            
+            if (newStatus !== 'idle') {
+                idleTimer = setTimeout(() => {
+                    state.status = 'idle';
+                    // Clean up potential lingering game states if they rely on status
+                    if (state.activeMinigame === 'guess') {
+                        state.activeMinigame = null;
+                        state.targetNumber = null;
+                        els.speechBubble.classList.add('hidden');
+                    }
+                    updateStanVisuals();
+                }, 3000);
+            }
         }
 
         function setEffect(eff) {
@@ -857,7 +1140,6 @@
                 els.prompt.innerText = "Prove you're a human. Make Stan smile.";
             }
 
-            // Ensure we are working with an integer
             let current = parseInt(state.friendship);
             if(isNaN(current)) current = 10;
 
@@ -892,9 +1174,7 @@
 
         function toggleEquip(itemId) {
             if (!state.unlocked[itemId]) return;
-            
             const itemMeta = ITEMS.find(i => i.id === itemId);
-            
             if (state.equipped[itemId]) {
                 state.equipped[itemId] = false;
             } else {
@@ -903,7 +1183,6 @@
                 });
                 state.equipped[itemId] = true;
             }
-            
             saveGame();
             renderInventory();
             updateStanVisuals();
@@ -924,17 +1203,11 @@
             ITEMS.forEach(item => {
                 const isUnlocked = state.unlocked[item.id];
                 const isEquipped = state.equipped[item.id];
-                
                 const card = document.createElement('div');
                 let classes = 'item-card p-3 rounded-xl border-2 cursor-pointer flex flex-col items-center text-center relative ';
-                
-                if (!isUnlocked) {
-                    classes += 'locked bg-gray-50 border-gray-100';
-                } else if (isEquipped) {
-                    classes += 'bg-blue-50 border-blue-400 ring-1 ring-blue-400';
-                } else {
-                    classes += 'bg-white border-gray-200 hover:border-blue-200';
-                }
+                if (!isUnlocked) classes += 'locked bg-gray-50 border-gray-100';
+                else if (isEquipped) classes += 'bg-blue-50 border-blue-400 ring-1 ring-blue-400';
+                else classes += 'bg-white border-gray-200 hover:border-blue-200';
                 card.className = classes;
                 card.onclick = () => toggleEquip(item.id);
 
@@ -942,65 +1215,62 @@
                 switch(item.id) {
                     case 'hat': iconHtml = '<div class="w-8 h-8 relative"><div class="w-0 h-0 border-l-[10px] border-l-transparent border-r-[10px] border-r-transparent border-b-[25px] border-b-[#3498db] mx-auto"></div></div>'; break;
                     case 'tophat': iconHtml = '<div class="w-8 h-8 relative flex flex-col items-center justify-end"><div class="w-6 h-6 bg-black"></div><div class="w-10 h-1 bg-black"></div></div>'; break;
+                    case 'crown': iconHtml = '<div class="w-8 h-6 bg-yellow-400 relative mx-auto mt-2"><div class="absolute -top-2 left-0 w-2 h-2 bg-yellow-400 rotate-45"></div><div class="absolute -top-2 left-3 w-2 h-2 bg-yellow-400 rotate-45"></div><div class="absolute -top-2 right-0 w-2 h-2 bg-yellow-400 rotate-45"></div></div>'; break;
                     case 'nose': iconHtml = '<div class="w-4 h-4 bg-red-500 rounded-full mx-auto mt-2 border border-red-700"></div>'; break;
+                    case 'monocle': iconHtml = '<div class="w-6 h-6 rounded-full border-2 border-yellow-600 mx-auto mt-1 relative"><div class="absolute top-0 right-[-5px] w-2 h-[2px] bg-yellow-600 rotate-45"></div></div>'; break;
                     case 'ears': iconHtml = '<div class="flex justify-center gap-1 mt-2"><div class="w-0 h-0 border-l-[6px] border-l-transparent border-r-[6px] border-r-transparent border-b-[12px] border-b-[#333]"></div><div class="w-0 h-0 border-l-[6px] border-l-transparent border-r-[6px] border-r-transparent border-b-[12px] border-b-[#333]"></div></div>'; break;
+                    case 'bowtie': iconHtml = '<div class="flex justify-center items-center mt-2"><div class="w-0 h-0 border-t-[5px] border-t-transparent border-l-[8px] border-l-red-600 border-b-[5px] border-b-transparent"></div><div class="w-2 h-2 bg-red-600 rounded-full -mx-1 relative z-10"></div><div class="w-0 h-0 border-t-[5px] border-t-transparent border-r-[8px] border-r-red-600 border-b-[5px] border-b-transparent"></div></div>'; break;
+                    case 'suit': iconHtml = '<div class="w-8 h-8 relative flex items-center justify-center"><div class="w-0 h-0 border-l-[8px] border-r-[8px] border-t-[14px] border-l-transparent border-r-transparent border-t-black absolute top-2"></div><div class="w-[2px] h-[10px] bg-red-600 absolute top-2"></div></div>'; break;
                     case 'golden': iconHtml = '<div class="w-6 h-6 rounded-full bg-gradient-to-br from-[#ffd700] to-[#f1c40f] mx-auto mt-1 border-2 border-white shadow-sm"></div>'; break;
                     case 'matrix': iconHtml = '<div class="text-[10px] font-mono leading-none text-center mt-1 font-bold text-green-600">101<br/>010</div>'; break;
                 }
 
                 let lockOverlay = '';
                 if (!isUnlocked) {
-                    lockOverlay = `<div class="absolute inset-0 flex items-center justify-center z-10 text-gray-400 padlock-icon">
-                        <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" viewBox="0 0 20 20" fill="currentColor">
-                            <path fill-rule="evenodd" d="M5 9V7a5 5 0 0110 0v2a2 2 0 012 2v5a2 2 0 01-2 2H5a2 2 0 01-2-2v-5a2 2 0 012-2zm8-2v2H7V7a3 3 0 016 0z" clip-rule="evenodd" />
-                        </svg>
-                    </div>`;
+                    lockOverlay = `<div class="absolute inset-0 flex items-center justify-center z-10 text-gray-400 padlock-icon"><svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M5 9V7a5 5 0 0110 0v2a2 2 0 012 2v5a2 2 0 01-2 2H5a2 2 0 01-2-2v-5a2 2 0 012-2zm8-2v2H7V7a3 3 0 016 0z" clip-rule="evenodd" /></svg></div>`;
                 }
 
-                card.innerHTML = `
-                    ${lockOverlay}
-                    <div class="h-10 w-full flex items-center justify-center icon mb-1">${iconHtml}</div>
-                    <div class="text-sm font-bold leading-tight">${item.name}</div>
-                    <div class="text-[10px] text-gray-500 mt-1 leading-tight">${item.desc}</div>
-                `;
+                card.innerHTML = `${lockOverlay}<div class="h-10 w-full flex items-center justify-center icon mb-1">${iconHtml}</div><div class="text-sm font-bold leading-tight">${item.name}</div><div class="text-[10px] text-gray-500 mt-1 leading-tight">${item.desc}</div>`;
                 els.inventoryGrid.appendChild(card);
             });
         }
 
-        function updateStanVisuals() {
+        function updateStanVisuals(isNightForce) {
             const s = state.status;
             const eq = state.equipped;
             const eff = state.effect;
+            
+            const hour = new Date().getHours();
+            const isNight = isNightForce !== undefined ? isNightForce : (hour >= 20 || hour < 6);
 
-            // Sleeping Logic
+            const showNightcap = isNight && !eq.hat && !eq.tophat && !eq.crown && !eq.ears;
+            if(showNightcap) {
+                els.parts.accNightcap.classList.remove('hidden');
+                els.parts.hair.classList.add('hidden'); 
+            } else {
+                els.parts.accNightcap.classList.add('hidden');
+            }
+            
             if(state.isSleeping) {
                 els.zzz.classList.remove('hidden');
                 els.stan.classList.add('sleeping-pose');
-                // Hide Eyes
                 els.parts.eyeLeft.classList.add('hidden');
                 els.parts.eyeRight.classList.add('hidden');
-                // Hide Bubbles
                 els.speechBubble.classList.add('hidden');
-                // Force hide arm when sleeping
                 els.parts.arm.classList.add('hidden');
             } else {
                 els.zzz.classList.add('hidden');
                 els.stan.classList.remove('sleeping-pose');
-                // Show Eyes
                 els.parts.eyeLeft.classList.remove('hidden');
                 els.parts.eyeRight.classList.remove('hidden');
-                // Show Speech Bubble if task active
-                if(state.currentTask) {
-                    els.speechBubble.innerText = state.currentTask.text; // Ensure text update
+                if(state.currentTask || state.activeMinigame || state.pendingMinigame) {
                     els.speechBubble.classList.remove('hidden');
                 } else {
                     els.speechBubble.classList.add('hidden');
                 }
-                // Show arm (will be styled below based on status)
-                els.parts.arm.classList.remove('hidden');
+                // Arm visibility handled below
             }
 
-            // Food Visibility
             if (!state.isSleeping && state.currentTask && state.currentTask.type === 'hunger') {
                 els.draggableFood.classList.remove('hidden');
             } else {
@@ -1017,9 +1287,12 @@
                 els.invBtn.classList.remove('bg-gray-100', 'text-gray-600');
             } else {
                 els.container.classList.remove('matrix-mode');
-                els.container.classList.add('bg-white');
+                if(isNight) {
+                    els.container.classList.remove('bg-white');
+                } else {
+                    els.container.classList.add('bg-white');
+                }
                 els.body.classList.remove('bg-black');
-                els.body.classList.add('bg-[#f0f2f5]');
                 els.matrixOverlay.classList.add('hidden');
                 els.invBtn.classList.remove('bg-[#003300]', 'text-green-400');
                 els.invBtn.classList.add('bg-gray-100', 'text-gray-600');
@@ -1029,86 +1302,78 @@
             else els.stan.classList.remove('golden-skin');
 
             els.stan.classList.remove('animate-dance', 'animate-shake', 'opacity-20', 'animate-backflip');
-            els.fireContainer.classList.add('hidden');
 
             if (eff === 'dance') els.stan.classList.add('animate-dance');
             if (eff === 'shake') els.stan.classList.add('animate-shake');
             if (eff === 'invisible') els.stan.classList.add('opacity-20');
             if (eff === 'backflip') els.stan.classList.add('animate-backflip');
-            if (eff === 'fire') els.fireContainer.classList.remove('hidden');
 
             if (eq.hat) els.parts.accHat.classList.remove('hidden'); else els.parts.accHat.classList.add('hidden');
             if (eq.tophat) els.parts.accTophat.classList.remove('hidden'); else els.parts.accTophat.classList.add('hidden');
+            if (eq.crown) els.parts.accCrown.classList.remove('hidden'); else els.parts.accCrown.classList.add('hidden');
             if (eq.ears) els.parts.accEars.classList.remove('hidden'); else els.parts.accEars.classList.add('hidden');
             if (eq.nose) els.parts.accNose.classList.remove('hidden'); else els.parts.accNose.classList.add('hidden');
+            if (eq.monocle) els.parts.accMonocle.classList.remove('hidden'); else els.parts.accMonocle.classList.add('hidden');
+            if (eq.bowtie) els.parts.accBowtie.classList.remove('hidden'); else els.parts.accBowtie.classList.add('hidden');
+            if (eq.suit) {
+                els.parts.accSuit.classList.remove('hidden');
+                els.parts.pants.classList.remove('bg-[#2980b9]');
+                els.parts.pants.classList.add('bg-black');
+            } else {
+                els.parts.accSuit.classList.add('hidden');
+                els.parts.pants.classList.add('bg-[#2980b9]');
+                els.parts.pants.classList.remove('bg-black');
+            }
 
-            if (eq.hat) els.parts.hair.classList.add('hidden'); else els.parts.hair.classList.remove('hidden');
+            if (eq.hat || eq.crown || eq.tophat || showNightcap) els.parts.hair.classList.add('hidden'); 
+            else els.parts.hair.classList.remove('hidden');
+
             if (eq.nose) els.parts.naturalNose.classList.add('hidden'); else els.parts.naturalNose.classList.remove('hidden');
+            
+            if (eq.monocle) els.parts.sunglasses.classList.add('hidden'); else els.parts.sunglasses.classList.remove('hidden');
 
-            els.parts.eyebrowLeft.className = `absolute top-[28px] left-[36px] w-[25px] h-[5px] bg-[#333] z-[4] rounded-full transition-transform duration-300 ${
-                s === 'happy' ? '-translate-y-1 rotate-[-5deg]' :
-                s === 'sad' ? 'rotate-[-15deg] translate-y-1' :
-                s === 'confused' ? '-translate-y-2 rotate-[-20deg]' : ''
-            }`;
-            els.parts.eyebrowRight.className = `absolute top-[28px] right-[36px] w-[25px] h-[5px] bg-[#333] z-[4] rounded-full transition-transform duration-300 ${
-                s === 'happy' ? '-translate-y-1 rotate-[5deg]' :
-                s === 'sad' ? 'rotate-[15deg] translate-y-1' :
-                s === 'confused' ? 'translate-y-0 rotate-[0deg]' : ''
-            }`;
+            els.parts.eyebrowLeft.className = `absolute top-[28px] left-[36px] w-[25px] h-[5px] bg-[#333] z-[4] rounded-full transition-transform duration-300 ${s === 'happy' ? '-translate-y-1 rotate-[-5deg]' : s === 'sad' ? 'rotate-[-15deg] translate-y-1' : s === 'confused' ? '-translate-y-2 rotate-[-20deg]' : ''}`;
+            els.parts.eyebrowRight.className = `absolute top-[28px] right-[36px] w-[25px] h-[5px] bg-[#333] z-[4] rounded-full transition-transform duration-300 ${s === 'happy' ? '-translate-y-1 rotate-[5deg]' : s === 'sad' ? 'rotate-[15deg] translate-y-1' : s === 'confused' ? 'translate-y-0 rotate-[0deg]' : ''}`;
 
-            els.parts.mouth.className = `absolute left-1/2 -translate-x-1/2 transition-all duration-300 z-[3] ${
-                s === 'happy' ? 'w-[30px] h-[20px] bg-transparent border-b-[4px] border-[#333] rounded-b-full bottom-[13px]' :
-                s === 'sad' ? 'w-[30px] h-[20px] bg-transparent border-t-[4px] border-[#333] rounded-t-full bottom-[4px]' :
-                s === 'confused' ? 'w-[20px] h-[4px] bg-[#333] rounded-[2px] bottom-[16px] -rotate-6' :
-                'w-[30px] h-[4px] bg-[#333] rounded-[2px] bottom-[16px]'
-            }`;
+            els.parts.mouth.className = `absolute left-1/2 -translate-x-1/2 transition-all duration-300 z-[3] ${s === 'happy' ? 'w-[30px] h-[20px] bg-transparent border-b-[4px] border-[#333] rounded-b-full bottom-[13px]' : s === 'sad' ? 'w-[30px] h-[20px] bg-transparent border-t-[4px] border-[#333] rounded-t-full bottom-[4px]' : s === 'confused' ? 'w-[20px] h-[4px] bg-[#333] rounded-[2px] bottom-[16px] -rotate-6' : 'w-[30px] h-[4px] bg-[#333] rounded-[2px] bottom-[16px]'}`;
 
             if (s === 'sad') {
-                els.parts.tearLeft.classList.remove('h-0', 'opacity-0');
-                els.parts.tearLeft.classList.add('h-[40px]', 'opacity-100');
-                els.parts.tearRight.classList.remove('h-0', 'opacity-0');
-                els.parts.tearRight.classList.add('h-[40px]', 'opacity-100');
-                els.parts.pupilLeft.classList.add('translate-y-[2px]');
-                els.parts.pupilRight.classList.add('translate-y-[2px]');
+                els.parts.tearLeft.classList.remove('h-0', 'opacity-0'); els.parts.tearLeft.classList.add('h-[40px]', 'opacity-100');
+                els.parts.tearRight.classList.remove('h-0', 'opacity-0'); els.parts.tearRight.classList.add('h-[40px]', 'opacity-100');
+                els.parts.pupilLeft.classList.add('translate-y-[2px]'); els.parts.pupilRight.classList.add('translate-y-[2px]');
             } else {
-                els.parts.tearLeft.classList.add('h-0', 'opacity-0');
-                els.parts.tearLeft.classList.remove('h-[40px]', 'opacity-100');
-                els.parts.tearRight.classList.add('h-0', 'opacity-0');
-                els.parts.tearRight.classList.remove('h-[40px]', 'opacity-100');
-                els.parts.pupilLeft.classList.remove('translate-y-[2px]');
-                els.parts.pupilRight.classList.remove('translate-y-[2px]');
+                els.parts.tearLeft.classList.add('h-0', 'opacity-0'); els.parts.tearLeft.classList.remove('h-[40px]', 'opacity-100');
+                els.parts.tearRight.classList.add('h-0', 'opacity-0'); els.parts.tearRight.classList.remove('h-[40px]', 'opacity-100');
+                els.parts.pupilLeft.classList.remove('translate-y-[2px]'); els.parts.pupilRight.classList.remove('translate-y-[2px]');
                 if (s === 'happy') {
-                    els.parts.pupilLeft.classList.add('translate-y-[-2px]');
-                    els.parts.pupilRight.classList.add('translate-y-[-2px]');
+                    els.parts.pupilLeft.classList.add('translate-y-[-2px]'); els.parts.pupilRight.classList.add('translate-y-[-2px]');
                 } else {
-                    els.parts.pupilLeft.classList.remove('translate-y-[-2px]');
-                    els.parts.pupilRight.classList.remove('translate-y-[-2px]');
+                    els.parts.pupilLeft.classList.remove('translate-y-[-2px]'); els.parts.pupilRight.classList.remove('translate-y-[-2px]');
                 }
             }
 
-            // Only apply arm styling if NOT sleeping (handled above with hidden class)
             if (!state.isSleeping) {
-                if (s === 'idle') {
+                // Allow standard arm logic if NO minigame OR if minigame is 'guess' (which uses standard emotions)
+                // RPS has its own custom animation loop, so we ignore it here
+                const useStandardArm = !state.activeMinigame || state.activeMinigame === 'guess';
+                
+                if (s === 'idle' && useStandardArm) {
                     els.parts.arm.classList.add('opacity-0', 'rotate-0');
                     els.parts.arm.classList.remove('opacity-100', 'rotate-[-140deg]', 'rotate-[-20deg]');
                     els.parts.handWrapper.classList.add('opacity-0', 'scale-0');
                     els.parts.handWrapper.classList.remove('opacity-100', 'scale-100', 'rotate-[140deg]', 'rotate-[20deg]');
-                } else {
+                } else if (useStandardArm) {
                     els.parts.arm.classList.remove('opacity-0', 'rotate-0');
                     els.parts.arm.classList.add('opacity-100');
                     els.parts.handWrapper.classList.remove('opacity-0', 'scale-0');
                     els.parts.handWrapper.classList.add('opacity-100', 'scale-100');
 
                     if (s === 'happy' || s === 'confused') {
-                        els.parts.arm.classList.add('rotate-[-140deg]');
-                        els.parts.arm.classList.remove('rotate-[-20deg]');
-                        els.parts.handWrapper.classList.add('rotate-[140deg]');
-                        els.parts.handWrapper.classList.remove('rotate-[20deg]');
+                        els.parts.arm.classList.add('rotate-[-140deg]'); els.parts.arm.classList.remove('rotate-[-20deg]');
+                        els.parts.handWrapper.classList.add('rotate-[140deg]'); els.parts.handWrapper.classList.remove('rotate-[20deg]');
                     } else if (s === 'sad') {
-                        els.parts.arm.classList.add('rotate-[-20deg]');
-                        els.parts.arm.classList.remove('rotate-[-140deg]');
-                        els.parts.handWrapper.classList.add('rotate-[20deg]');
-                        els.parts.handWrapper.classList.remove('rotate-[140deg]');
+                        els.parts.arm.classList.add('rotate-[-20deg]'); els.parts.arm.classList.remove('rotate-[-140deg]');
+                        els.parts.handWrapper.classList.add('rotate-[20deg]'); els.parts.handWrapper.classList.remove('rotate-[140deg]');
                     }
                 }
             }
@@ -1116,10 +1381,16 @@
             els.parts.iconHappy.classList.add('hidden');
             els.parts.iconSad.classList.add('hidden');
             els.parts.iconConfused.classList.add('hidden');
-
-            if (s === 'happy') els.parts.iconHappy.classList.remove('hidden');
-            if (s === 'sad') els.parts.iconSad.classList.remove('hidden');
-            if (s === 'confused') els.parts.iconConfused.classList.remove('hidden');
+            
+            // Allow icons if not RPS (RPS handles its own icons)
+            if (state.activeMinigame !== 'rps') {
+                els.parts.iconRock.classList.add('hidden');
+                els.parts.iconPaper.classList.add('hidden');
+                els.parts.iconScissors.classList.add('hidden');
+                if (s === 'happy') els.parts.iconHappy.classList.remove('hidden');
+                if (s === 'sad') els.parts.iconSad.classList.remove('hidden');
+                if (s === 'confused') els.parts.iconConfused.classList.remove('hidden');
+            }
         }
 
         init();

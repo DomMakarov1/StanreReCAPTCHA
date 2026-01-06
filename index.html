@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Stan's reReCAPTCHA - Friendship Edition</title>
+    <title>Stan's reReCAPTCHA - Tamagotchi Edition</title>
     
     <script src="https://cdn.tailwindcss.com"></script>
     
@@ -14,6 +14,7 @@
     <style>
         .ease-spring { transition-timing-function: cubic-bezier(0.175, 0.885, 0.32, 1.275); }
         
+        /* --- ANIMATIONS --- */
         @keyframes cry { 0% { top: 65px; } 100% { top: 80px; } }
         .animate-cry { animation: cry 1s infinite alternate; }
         
@@ -31,12 +32,28 @@
         }
         .animate-shake { animation: shake 0.2s infinite; }
 
-        @keyframes matrix-fade {
-            0% { opacity: 0.1; }
-            50% { opacity: 0.3; }
-            100% { opacity: 0.1; }
+        @keyframes backflip {
+            0% { transform: rotate(0deg) translateY(0); }
+            40% { transform: rotate(-180deg) translateY(-60px); }
+            80% { transform: rotate(-360deg) translateY(0); }
+            100% { transform: rotate(-360deg) translateY(0); }
         }
-        
+        .animate-backflip { animation: backflip 1s ease-in-out; }
+
+        @keyframes fire-rise {
+            0% { transform: translateY(0) scale(1); opacity: 0.8; }
+            50% { opacity: 1; }
+            100% { transform: translateY(-40px) scale(0); opacity: 0; }
+        }
+        .fire-flame { animation: fire-rise 1s infinite ease-out; }
+
+        @keyframes zzz-float {
+            0% { transform: translate(0, 0) scale(0.5); opacity: 0; }
+            50% { opacity: 1; }
+            100% { transform: translate(10px, -30px) scale(1.2); opacity: 0; }
+        }
+        .zzz-symbol { animation: zzz-float 2.5s infinite ease-out; }
+
         @keyframes glitch-anim {
             0% { transform: translate(0); }
             2% { transform: translate(-2px, 2px); filter: hue-rotate(90deg); }
@@ -47,7 +64,14 @@
             94% { transform: translate(-1px, -1px); }
             100% { transform: translate(0); }
         }
+
+        @keyframes float-up {
+            0% { transform: translateY(0) scale(1); opacity: 1; }
+            100% { transform: translateY(-100px) scale(0); opacity: 0; }
+        }
+        .particle { pointer-events: none; position: absolute; z-index: 50; }
         
+        /* --- MODES --- */
         .matrix-mode {
             background-color: #000 !important;
             color: #00ff00 !important;
@@ -56,103 +80,138 @@
             box-shadow: 0 0 20px rgba(0, 255, 0, 0.5) !important;
             animation: glitch-anim 3s infinite;
         }
-        
-        .matrix-mode input {
-            background-color: #111 !important;
-            color: #00ff00 !important;
-            border-color: #00ff00 !important;
-        }
-        .matrix-mode button {
-            background-color: #003300 !important;
-            border: 1px solid #00ff00 !important;
-            color: #00ff00 !important;
-        }
-        .matrix-mode button:hover {
-            background-color: #00ff00 !important;
-            color: #000 !important;
-        }
-        .matrix-mode .inventory-panel {
-            background-color: #111 !important;
-            color: #00ff00 !important;
-        }
+        .matrix-mode input { background-color: #111 !important; color: #00ff00 !important; border-color: #00ff00 !important; }
+        .matrix-mode button { background-color: #003300 !important; border: 1px solid #00ff00 !important; color: #00ff00 !important; }
+        .matrix-mode button:hover { background-color: #00ff00 !important; color: #000 !important; }
+        .matrix-mode .inventory-panel { background-color: #111 !important; color: #00ff00 !important; }
         
         .golden-skin .head, .golden-skin .ear, .golden-skin .neck, .golden-skin .hand, .golden-skin .nose {
             background: linear-gradient(135deg, #ffd700, #f1c40f, #ffed86) !important;
             box-shadow: inset 0 0 10px rgba(255, 255, 0, 0.5);
         }
 
-        .item-card {
-            transition: all 0.2s;
+        /* --- UI COMPONENTS --- */
+        .item-card { transition: all 0.2s; }
+        .item-card:hover { transform: translateY(-2px); }
+        .item-card.locked { filter: grayscale(100%); opacity: 0.6; pointer-events: none; }
+        .item-card.locked .icon { filter: blur(5px); }
+        .padlock-icon { transform: translateY(-15px); }
+        .hidden { display: none !important; }
+
+        .speech-bubble {
+            position: absolute;
+            top: -40px;
+            right: -80px;
+            background: white;
+            border: 2px solid #333;
+            border-radius: 15px;
+            padding: 10px;
+            font-size: 12px;
+            font-weight: bold;
+            width: 120px;
+            text-align: center;
+            z-index: 70;
+            box-shadow: 2px 2px 0px rgba(0,0,0,0.1);
+            animation: pop-in 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
         }
-        .item-card:hover {
-            transform: translateY(-2px);
+        .speech-bubble::after {
+            content: '';
+            position: absolute;
+            left: -10px;
+            top: 50%;
+            transform: translateY(-50%);
+            border-top: 10px solid transparent;
+            border-bottom: 10px solid transparent;
+            border-right: 10px solid #333;
         }
-        .item-card.locked {
-            filter: grayscale(100%);
-            opacity: 0.6;
-            pointer-events: none;
-        }
-        .item-card.locked .icon {
-            filter: blur(5px);
+        @keyframes pop-in { from { transform: scale(0); } to { transform: scale(1); } }
+
+        .sleeping-pose {
+            transform: rotate(90deg) translateX(30px);
+            transform-origin: center center;
         }
         
-        .padlock-icon {
-            transform: translateY(-15px);
+        #draggable-food {
+            cursor: grab;
+            transition: transform 0.1s;
+            touch-action: none;
         }
-
-        .hidden { display: none !important; }
+        #draggable-food:active {
+            cursor: grabbing;
+            transform: scale(1.1);
+        }
     </style>
 </head>
 <body id="body" class="min-h-screen flex items-center justify-center font-sans selection:bg-[#5dade2] selection:text-white transition-colors duration-500 bg-[#f0f2f5]">
 
     <div id="matrix-overlay" class="fixed inset-0 pointer-events-none opacity-20 z-0 overflow-hidden text-[#00ff00] font-mono text-xs break-all leading-3 hidden"></div>
+    <div id="particle-container" class="fixed inset-0 pointer-events-none z-50 overflow-hidden"></div>
 
-    <div id="container" class="relative p-10 rounded-[20px] shadow-[0_10px_25px_rgba(0,0,0,0.1)] flex flex-col items-center w-[450px] transition-all duration-300 z-10 overflow-hidden bg-white">
+    <!-- DEV TOOLS -->
+    <div class="fixed top-4 right-4 z-[200] flex flex-col items-end gap-2">
+        <button id="dev-toggle" class="bg-gray-800 text-white text-[10px] px-3 py-1 rounded opacity-50 hover:opacity-100 shadow-md font-mono">Dev Tools</button>
+        <div id="dev-panel" class="hidden bg-white p-2 rounded shadow-lg flex flex-col gap-2 w-32 border border-gray-200">
+            <button id="dev-sleep" class="text-xs bg-blue-100 hover:bg-blue-200 px-2 py-1 rounded text-left">Force Sleep</button>
+            <button id="dev-wake" class="text-xs bg-green-100 hover:bg-green-200 px-2 py-1 rounded text-left">Force Wake</button>
+            <button id="dev-hunger" class="text-xs bg-orange-100 hover:bg-orange-200 px-2 py-1 rounded text-left">Trigger Hunger</button>
+            <button id="dev-bored" class="text-xs bg-purple-100 hover:bg-purple-200 px-2 py-1 rounded text-left">Trigger Boredom</button>
+            <button id="dev-reset-daily" class="text-xs bg-gray-100 hover:bg-gray-200 px-2 py-1 rounded text-left">Reset Daily Cap</button>
+        </div>
+    </div>
+
+    <div id="container" class="relative p-10 rounded-[20px] shadow-[0_10px_25px_rgba(0,0,0,0.1)] flex flex-col items-center w-[450px] transition-all duration-300 z-10 overflow-visible bg-white">
         
-        <div class="absolute top-4 left-1/2 -translate-x-1/2 z-20">
-            <button 
-                id="inventory-btn"
-                class="p-2 rounded-full shadow-sm transition-all hover:scale-105 active:scale-95 bg-gray-100 text-gray-600 hover:bg-gray-200"
-                title="Inventory"
-            >
+        <!-- Fire Effect -->
+        <div id="fire-container" class="absolute bottom-0 left-0 w-full h-[120px] pointer-events-none z-50 flex justify-center hidden opacity-80 overflow-hidden rounded-b-[20px]">
+            <div class="fire-flame w-10 h-10 bg-orange-500 rounded-full blur-md absolute bottom-[-10px] left-[20%]" style="animation-delay: 0.1s; background: radial-gradient(circle, yellow, red);"></div>
+            <div class="fire-flame w-14 h-14 bg-orange-600 rounded-full blur-md absolute bottom-[-15px] left-[35%]" style="animation-delay: 0.2s; background: radial-gradient(circle, orange, red);"></div>
+            <div class="fire-flame w-12 h-12 bg-red-500 rounded-full blur-md absolute bottom-[-10px] left-[50%]" style="animation-delay: 0.4s; background: radial-gradient(circle, yellow, red);"></div>
+            <div class="fire-flame w-16 h-16 bg-orange-500 rounded-full blur-md absolute bottom-[-20px] left-[60%]" style="animation-delay: 0s; background: radial-gradient(circle, orange, red);"></div>
+            <div class="fire-flame w-10 h-10 bg-yellow-500 rounded-full blur-md absolute bottom-[-5px] left-[75%]" style="animation-delay: 0.3s; background: radial-gradient(circle, yellow, orange);"></div>
+        </div>
+
+        <!-- Inventory Button -->
+        <div class="absolute top-4 left-1/2 -translate-x-1/2 z-20 flex items-center gap-2">
+            <!-- Draggable Food (Visible when hungry) -->
+            <div id="draggable-food" class="text-2xl hidden select-none z-50" draggable="false" title="Feed Stan">🍫</div>
+            
+            <button id="inventory-btn" class="p-2 rounded-full shadow-sm transition-all hover:scale-105 active:scale-95 bg-gray-100 text-gray-600 hover:bg-gray-200" title="Inventory">
                 <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4" />
                 </svg>
             </button>
         </div>
 
-        <div 
-            id="inventory-panel"
-            class="inventory-panel absolute inset-0 bg-white/95 backdrop-blur-sm z-[100] transition-transform duration-300 ease-spring flex flex-col p-6 translate-y-full"
-        >
+        <!-- Inventory Panel -->
+        <div id="inventory-panel" class="inventory-panel absolute inset-0 bg-white/95 backdrop-blur-sm z-[100] transition-all duration-300 ease-spring flex flex-col p-6 translate-y-full opacity-0 pointer-events-none rounded-[20px]">
             <div class="flex justify-between items-center mb-6">
                 <h2 class="text-xl font-bold font-montserrat">Inventory</h2>
                 <button id="close-inventory-btn" class="text-gray-500 hover:text-black">
-                    <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-                    </svg>
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" /></svg>
                 </button>
             </div>
-
             <div id="inventory-grid" class="grid grid-cols-2 gap-3 overflow-y-auto"></div>
         </div>
 
+        <!-- Friendship Meter -->
         <div class="w-full mb-6 mt-2 relative z-10">
             <div class="flex justify-between text-xs font-bold uppercase tracking-widest mb-1 opacity-70">
                 <span>Friendship</span>
                 <span id="friendship-text">10%</span>
             </div>
             <div id="friendship-bg" class="w-full h-3 rounded-full overflow-hidden bg-gray-200">
-                <div 
-                    id="friendship-bar"
-                    class="h-full transition-all duration-500 ease-out"
-                    style="width: 10%; background-color: #e74c3c;"
-                ></div>
+                <div id="friendship-bar" class="h-full transition-all duration-500 ease-out" style="width: 10%; background-color: #e74c3c;"></div>
             </div>
         </div>
 
+        <!-- STAN -->
         <div id="stan" class="relative w-[140px] h-[220px] mb-2 transition-all duration-300 idle">
             
+            <!-- Needs Speech Bubble -->
+            <div id="speech-bubble" class="speech-bubble hidden">I'm hungry!</div>
+
+            <!-- Sleeping Zzz -->
+            <!-- Accessories -->
             <div id="acc-hat" class="absolute -top-[40px] left-1/2 -translate-x-1/2 z-[60] hidden">
                 <div class="relative w-0 h-0 border-l-[24px] border-l-transparent border-r-[24px] border-r-transparent border-b-[60px] border-b-[#3498db]">
                     <div class="absolute top-[20px] -left-[5px] w-2 h-2 bg-yellow-400 rounded-full opacity-90"></div>
@@ -177,6 +236,7 @@
                 </div>
             </div>
 
+            <!-- Body Parts -->
             <div id="stan-hair" class="absolute -top-[15px] left-1/2 -translate-x-1/2 w-[20px] h-[25px] bg-[#333] rounded-t-[50%] z-[3] before:absolute before:bottom-0 before:-left-[5px] before:w-[10px] before:h-[10px] before:bg-[#333] before:rounded-full"></div>
 
             <div id="eyebrow-left" class="absolute top-[28px] left-[36px] w-[25px] h-[5px] bg-[#333] z-[4] rounded-full transition-transform duration-300"></div>
@@ -192,10 +252,10 @@
             <div class="ear absolute top-[50px] w-[20px] h-[25px] bg-[#eebb99] rounded-full z-[1] right-[10px]"></div>
 
             <div class="head relative w-[100px] h-[110px] bg-[#eebb99] rounded-[50px_50px_20px_20px] mx-auto z-[2]">
-                <div class="absolute top-[40px] left-[19px] w-[28px] h-[22px] bg-white rounded-b-[15px] z-[4] overflow-hidden flex justify-center items-center">
+                <div id="eye-left" class="absolute top-[40px] left-[19px] w-[28px] h-[22px] bg-white rounded-b-[15px] z-[4] overflow-hidden flex justify-center items-center">
                     <div id="pupil-left" class="w-[10px] h-[10px] bg-black rounded-full transition-transform duration-300 translate-y-[-2px]"></div>
                 </div>
-                <div class="absolute top-[40px] right-[19px] w-[28px] h-[22px] bg-white rounded-b-[15px] z-[4] overflow-hidden flex justify-center items-center">
+                <div id="eye-right" class="absolute top-[40px] right-[19px] w-[28px] h-[22px] bg-white rounded-b-[15px] z-[4] overflow-hidden flex justify-center items-center">
                     <div id="pupil-right" class="w-[10px] h-[10px] bg-black rounded-full transition-transform duration-300 translate-y-[-2px]"></div>
                 </div>
 
@@ -239,33 +299,44 @@
 
         </div>
 
-        <div 
-            class="font-semibold mb-[20px] mt-[10px] text-center text-[19px] leading-tight tracking-tight transition-colors"
-            style="font-family: 'Montserrat', sans-serif;"
-        >
+        <!-- Zzz Particles (Now outside of rotated stan div) -->
+        <div id="zzz-container" class="absolute top-[160px] right-[100px] hidden z-[80]">
+            <div class="zzz-symbol text-blue-400 font-bold text-xl absolute" style="animation-delay: 0s">Z</div>
+            <div class="zzz-symbol text-blue-400 font-bold text-lg absolute top-2 right-2" style="animation-delay: 0.5s">z</div>
+            <div class="zzz-symbol text-blue-400 font-bold text-md absolute top-4 right-4" style="animation-delay: 1s">z</div>
+        </div>
+
+        <div id="prompt-text" class="font-semibold mb-[20px] mt-[10px] text-center text-[19px] leading-tight tracking-tight transition-colors" style="font-family: 'Montserrat', sans-serif;">
             Prove you're a human. Make Stan smile.
         </div>
 
         <div class="flex gap-[10px] items-center w-full relative">
-            <input 
-                id="input-text"
-                type="text" 
-                placeholder="Say something nice..." 
-                autocomplete="off"
-                class="flex-1 p-[6px_15px] border-[2px] border-[#ddd] rounded-[8px] outline-none transition-colors focus:border-[#3498db]"
-            />
-            <div class="absolute -bottom-[20px] left-0 text-[10px] opacity-50">reReCAPTCHA 2.0</div>
-            <button 
-                id="submit-btn"
-                class="bg-[#5dade2] text-white p-[6px_20px] rounded-[8px] cursor-pointer font-semibold select-none transition-transform active:scale-95 hover:bg-[#3498db] whitespace-nowrap"
-            >
-                Tell Stan
-            </button>
+            <input id="input-text" type="text" placeholder="Say something nice..." autocomplete="off" class="flex-1 p-[6px_15px] border-[2px] border-[#ddd] rounded-[8px] outline-none transition-colors focus:border-[#3498db]" />
+            <div class="absolute -bottom-[20px] left-0 text-[10px] opacity-50">reReCAPTCHA 3.0</div>
+            <button id="submit-btn" class="bg-[#5dade2] text-white p-[6px_20px] rounded-[8px] cursor-pointer font-semibold select-none transition-transform active:scale-95 hover:bg-[#3498db] whitespace-nowrap">Tell Stan</button>
         </div>
 
     </div>
 
+    <!-- Reset Save Button -->
+    <div class="fixed bottom-4 right-4 z-50">
+        <button id="reset-save-btn" class="text-xs text-gray-400 hover:text-red-500 bg-white/50 px-2 py-1 rounded">Reset Save</button>
+    </div>
+
     <script>
+        const STORAGE_KEY = 'stan_save_v2';
+        const DAILY_CAP = 40; 
+
+        // --- BRAIN DATA (Dictionary) ---
+        const DICTIONARY = {
+            // Insults (-2)
+            bald: -2, ugly: -2, bad: -2, stupid: -2, dumb: -2, hate: -2, gross: -2, no: -2, robot: -2, fake: -2, awful: -2, trash: -2, smelly: -2, horrible: -2, crap: -2, idiot: -2, loser: -2,
+            // Compliments (+2)
+            kind: 2, cool: 2, nice: 2, love: 2, handsome: 2, smart: 2, good: 2, best: 2, great: 2, wow: 2, smile: 2, pretty: 2, beautiful: 2, like: 2, awesome: 2, human: 2, amazing: 2, wonderful: 2, friend: 2, bestie: 2,
+            // Task Items (+5 contextually)
+            pizza: 0, burger: 0, chocolate: 0, candy: 0, sleep: 0, nap: 0, wake: 0, dance: 0, sing: 0
+        };
+
         const ITEMS = [
             { id: 'hat', name: 'Party Hat', desc: 'Reach 50% Friendship', slot: 'head' },
             { id: 'tophat', name: 'Top Hat', desc: 'Compliment his hair', slot: 'head' }, 
@@ -275,30 +346,45 @@
             { id: 'matrix', name: 'The Matrix', desc: 'Find the glitch', slot: 'skin' },
         ];
 
-        const sadWords = ['hair', 'bald', 'ugly', 'bad', 'stupid', 'dumb', 'hate', 'gross', 'no', 'robot', 'fake', 'awful', 'trash', 'smelly', 'horrible', 'crap'];
-        const happyWords = ['kind','cool', 'nice', 'love', 'handsome', 'smart', 'good', 'best', 'great', 'wow', 'smile', 'pretty', 'beautiful', 'like', 'awesome', 'human', 'amazing', 'wonderful', 'friend', 'bestie', 'like', 'love'];
+        const TASKS = [
+            { text: "I'm hungry...", keywords: ['pizza', 'burger', 'chocolate', 'candy'], reward: 15, type: 'hunger' },
+            { text: "I'm bored.", keywords: ['dance', 'sing', 'joke', 'play'], reward: 10, type: 'fun' },
+            { text: "I'm tired.", keywords: ['sleep', 'nap', 'bed'], reward: 10, type: 'sleep' },
+            { text: "Do I look ok?", keywords: ['yes', 'good', 'handsome', 'cool', 'pretty'], reward: 10, type: 'validate' },
+        ];
+
         const secretWords = {
             'dance': 'dance', 'party': 'dance', 'wiggle': 'dance',
             'cat': 'cat_unlock', 'meow': 'cat_unlock',
             'hack': 'matrix_unlock', 'code': 'matrix_unlock', 'matrix': 'matrix_unlock',
             'invisible': 'invisible', 'ghost': 'invisible',
             'shake': 'shake',
+            'flip': 'backflip', 'backflip': 'backflip',
+            'fire': 'fire', 'burn': 'fire', 'flame': 'fire',
         };
 
-        const state = {
+        const defaultState = {
             status: 'idle',
             friendship: 10,
             confusedCount: 0,
             showInventory: false,
             unlocked: { hat: false, tophat: false, nose: false, ears: false, matrix: false, golden: false },
             equipped: { hat: false, tophat: false, nose: false, ears: false, matrix: false, golden: false },
-            effect: ''
+            effect: '',
+            lastLogin: Date.now(),
+            dailyPoints: 0,
+            dailyDate: new Date().toDateString(),
+            currentTask: null,
+            isSleeping: false
         };
+
+        let state = JSON.parse(JSON.stringify(defaultState)); // Deep copy
 
         const els = {
             body: document.getElementById('body'),
             container: document.getElementById('container'),
             matrixOverlay: document.getElementById('matrix-overlay'),
+            particleContainer: document.getElementById('particle-container'),
             stan: document.getElementById('stan'),
             inventoryPanel: document.getElementById('inventory-panel'),
             inventoryGrid: document.getElementById('inventory-grid'),
@@ -309,9 +395,26 @@
             submitBtn: document.getElementById('submit-btn'),
             invBtn: document.getElementById('inventory-btn'),
             closeInvBtn: document.getElementById('close-inventory-btn'),
+            fireContainer: document.getElementById('fire-container'),
+            resetBtn: document.getElementById('reset-save-btn'),
+            speechBubble: document.getElementById('speech-bubble'),
+            zzz: document.getElementById('zzz-container'),
+            cobweb: document.getElementById('cobweb'), // Left in els but removed from DOM
+            prompt: document.getElementById('prompt-text'),
+            draggableFood: document.getElementById('draggable-food'),
+            // Dev Tool Els
+            devToggle: document.getElementById('dev-toggle'),
+            devPanel: document.getElementById('dev-panel'),
+            devSleep: document.getElementById('dev-sleep'),
+            devWake: document.getElementById('dev-wake'),
+            devHunger: document.getElementById('dev-hunger'),
+            devBored: document.getElementById('dev-bored'),
+            devResetDaily: document.getElementById('dev-reset-daily'),
             parts: {
                 eyebrowLeft: document.getElementById('eyebrow-left'),
                 eyebrowRight: document.getElementById('eyebrow-right'),
+                eyeLeft: document.getElementById('eye-left'),
+                eyeRight: document.getElementById('eye-right'),
                 mouth: document.getElementById('stan-mouth'),
                 tearLeft: document.getElementById('tear-left'),
                 tearRight: document.getElementById('tear-right'),
@@ -331,17 +434,215 @@
             }
         };
 
+        // --- AUDIO SYSTEM (Web Audio API) ---
+        const AudioCtx = window.AudioContext || window.webkitAudioContext;
+        let audioCtx;
+
+        function initAudio() {
+            if (!audioCtx) audioCtx = new AudioCtx();
+            if (audioCtx.state === 'suspended') audioCtx.resume();
+        }
+
+        function playTone(freq, type, duration, delay = 0) {
+            if (!audioCtx) return;
+            const osc = audioCtx.createOscillator();
+            const gain = audioCtx.createGain();
+            osc.type = type;
+            osc.frequency.setValueAtTime(freq, audioCtx.currentTime + delay);
+            gain.gain.setValueAtTime(0.1, audioCtx.currentTime + delay);
+            gain.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + delay + duration);
+            osc.connect(gain);
+            gain.connect(audioCtx.destination);
+            osc.start(audioCtx.currentTime + delay);
+            osc.stop(audioCtx.currentTime + delay + duration);
+        }
+
+        function playHappySound() {
+            initAudio();
+            playTone(440, 'sine', 0.3, 0); // A4
+            playTone(554, 'sine', 0.3, 0.1); // C#5
+            playTone(659, 'sine', 0.4, 0.2); // E5
+        }
+
+        function playSadSound() {
+            initAudio();
+            playTone(392, 'triangle', 0.4, 0); // G4
+            playTone(370, 'triangle', 0.6, 0.2); // F#4
+        }
+
+        function playConfusedSound() {
+            initAudio();
+            playTone(300, 'square', 0.1, 0);
+            playTone(400, 'square', 0.1, 0.1);
+        }
+
+        function playUnlockSound() {
+            initAudio();
+            playTone(523, 'sine', 0.1, 0); // C5
+            playTone(659, 'sine', 0.1, 0.1); // E5
+            playTone(784, 'sine', 0.1, 0.2); // G5
+            playTone(1046, 'sine', 0.4, 0.3); // C6
+        }
+
+        function playClickSound() {
+            // Subtle click
+            initAudio();
+            playTone(800, 'sine', 0.05, 0);
+        }
+
+        // --- PARTICLE SYSTEM ---
+        function createParticles(type, x, y) {
+            const count = 10;
+            for (let i = 0; i < count; i++) {
+                const el = document.createElement('div');
+                el.classList.add('particle');
+                
+                const angle = Math.random() * Math.PI * 2;
+                const speed = 2 + Math.random() * 3;
+                const vx = Math.cos(angle) * speed;
+                const vy = Math.sin(angle) * speed - 5; // Upward bias
+
+                el.style.left = x + 'px';
+                el.style.top = y + 'px';
+                
+                if (type === 'heart') {
+                    el.innerHTML = '❤️';
+                    el.style.fontSize = (10 + Math.random() * 10) + 'px';
+                } else if (type === 'tear') {
+                    el.innerHTML = '💧';
+                    el.style.fontSize = (10 + Math.random() * 10) + 'px';
+                } else if (type === 'confetti') {
+                    el.style.width = '8px';
+                    el.style.height = '8px';
+                    el.style.backgroundColor = ['#f00', '#0f0', '#00f', '#ff0', '#0ff'][Math.floor(Math.random()*5)];
+                }
+
+                els.particleContainer.appendChild(el);
+
+                let posX = x;
+                let posY = y;
+                let opacity = 1;
+
+                const anim = setInterval(() => {
+                    posX += vx;
+                    posY += vy + 1; // Gravity
+                    opacity -= 0.02;
+                    el.style.left = posX + 'px';
+                    el.style.top = posY + 'px';
+                    el.style.opacity = opacity;
+
+                    if (opacity <= 0) {
+                        clearInterval(anim);
+                        el.remove();
+                    }
+                }, 16);
+            }
+        }
+
+        // --- GAME LOGIC ---
+
+        function loadSave() {
+            try {
+                const saved = localStorage.getItem(STORAGE_KEY);
+                return saved ? JSON.parse(saved) : null;
+            } catch (e) { return null; }
+        }
+
+        function saveGame() {
+            state.lastLogin = Date.now();
+            localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
+        }
+
+        function resetSave() {
+            localStorage.removeItem(STORAGE_KEY);
+            location.reload();
+        }
+
+        function calculateSentiment(text) {
+            const words = text.toLowerCase().match(/\b\w+\b/g) || [];
+            let score = 0;
+            words.forEach(w => {
+                if (DICTIONARY[w] !== undefined) score += DICTIONARY[w];
+            });
+            return score;
+        }
+
+        function checkDecay() {
+            const now = Date.now();
+            const hoursSince = (now - state.lastLogin) / (1000 * 60 * 60);
+            
+            // Daily reset for cap
+            const today = new Date().toDateString();
+            if (state.dailyDate !== today) {
+                state.dailyPoints = 0;
+                state.dailyDate = today;
+            }
+
+            // Sleep Logic
+            if (hoursSince > 24) {
+                state.isSleeping = true;
+            } else {
+                state.isSleeping = false;
+            }
+
+            // Friendship Decay (5% per hour absent, capped at 20% loss per session)
+            if (hoursSince > 1) {
+                const loss = Math.min(20, Math.floor(hoursSince * 5));
+                if (loss > 0) {
+                    // Safe subtraction
+                    state.friendship = Math.max(0, state.friendship - loss);
+                    console.log(`Decayed friendship by ${loss}%`);
+                }
+            }
+            saveGame();
+        }
+
+        function assignTask() {
+            // 30% chance to assign a task if none exists and he's awake
+            if (!state.currentTask && !state.isSleeping && Math.random() < 0.3) {
+                state.currentTask = TASKS[Math.floor(Math.random() * TASKS.length)];
+                els.speechBubble.innerText = state.currentTask.text;
+                els.speechBubble.classList.remove('hidden');
+                setState('idle'); // Ensure neutral state when task is assigned
+            }
+        }
+
         function init() {
+            const savedData = loadSave();
+            if (savedData) {
+                state = { ...defaultState, ...savedData };
+                
+                // --- FIX: Restore Logic for tasks missing 'type' ---
+                if (state.currentTask && !state.currentTask.type) {
+                    const matched = TASKS.find(t => t.text === state.currentTask.text);
+                    if (matched) state.currentTask = matched;
+                }
+                
+                // --- FIX: Ensure Friendship is a number ---
+                state.friendship = parseInt(state.friendship);
+                if(isNaN(state.friendship)) state.friendship = 10;
+
+                // Reset visual state on load to ensure arm is not stuck
+                state.status = 'idle';
+                state.effect = '';
+            }
+            
+            checkDecay();
             renderInventory();
             updateStanVisuals();
+            updateFriendship(0);
+            assignTask();
             
             els.matrixOverlay.innerHTML = Array(2000).fill(0).map(() => Math.random() > 0.5 ? '1' : '0').join(' ');
 
-            els.submitBtn.addEventListener('click', tellStan);
+            els.submitBtn.addEventListener('click', () => { initAudio(); processInput(); });
             els.input.addEventListener('keydown', (e) => {
-                if (e.key === 'Enter') tellStan();
+                if (e.key === 'Enter') { initAudio(); processInput(); }
+                else { playClickSound(); }
             });
+            
             els.invBtn.addEventListener('click', () => {
+                initAudio();
                 state.showInventory = !state.showInventory;
                 updateInventoryPanel();
             });
@@ -349,20 +650,135 @@
                 state.showInventory = false;
                 updateInventoryPanel();
             });
+            els.resetBtn.addEventListener('click', () => {
+                resetSave();
+            });
+
+            // DEV TOOL LISTENERS
+            els.devToggle.addEventListener('click', () => {
+                els.devPanel.classList.toggle('hidden');
+            });
+            els.devSleep.addEventListener('click', () => {
+                state.lastLogin = Date.now() - (25 * 60 * 60 * 1000); // 25 hours ago
+                checkDecay();
+                updateStanVisuals();
+            });
+            els.devWake.addEventListener('click', () => {
+                state.isSleeping = false;
+                setState('idle');
+                updateStanVisuals();
+                saveGame();
+            });
+            els.devHunger.addEventListener('click', () => {
+                state.currentTask = TASKS[0]; // Hunger task
+                els.speechBubble.innerText = state.currentTask.text;
+                els.speechBubble.classList.remove('hidden');
+                setState('idle'); // Ensure neutral state
+                updateStanVisuals(); // Update visuals to show/hide food
+                saveGame();
+            });
+            els.devBored.addEventListener('click', () => {
+                state.currentTask = TASKS[1]; // Bored task
+                els.speechBubble.innerText = state.currentTask.text;
+                els.speechBubble.classList.remove('hidden');
+                setState('idle'); // Ensure neutral state
+                updateStanVisuals();
+                saveGame();
+            });
+            els.devResetDaily.addEventListener('click', () => {
+                state.dailyPoints = 0;
+                saveGame();
+            });
+
+            // FOOD DRAG LOGIC
+            let isDragging = false;
+            let startX, startY;
+            
+            els.draggableFood.addEventListener('mousedown', (e) => {
+                isDragging = true;
+                startX = e.clientX;
+                startY = e.clientY;
+                e.target.style.cursor = 'grabbing';
+            });
+
+            window.addEventListener('mousemove', (e) => {
+                if (!isDragging) return;
+                const dx = e.clientX - startX;
+                const dy = e.clientY - startY;
+                els.draggableFood.style.transform = `translate(${dx}px, ${dy}px) scale(1.2)`;
+            });
+
+            window.addEventListener('mouseup', (e) => {
+                if (!isDragging) return;
+                isDragging = false;
+                els.draggableFood.style.cursor = 'grab';
+                
+                // Check collision with Stan
+                const foodRect = els.draggableFood.getBoundingClientRect();
+                const stanRect = els.stan.getBoundingClientRect();
+
+                // Simple collision detection
+                if (
+                    foodRect.left < stanRect.right &&
+                    foodRect.right > stanRect.left &&
+                    foodRect.top < stanRect.bottom &&
+                    foodRect.bottom > stanRect.top
+                ) {
+                    // Feed Stan
+                    if (state.currentTask && state.currentTask.type === 'hunger') {
+                        completeTask(true);
+                    } else {
+                        // Not hungry but fed
+                        setState('happy');
+                        playHappySound();
+                        createParticles('heart', stanRect.left + stanRect.width/2, stanRect.top);
+                    }
+                }
+                
+                // Reset position
+                els.draggableFood.style.transform = 'translate(0, 0) scale(1)';
+            });
         }
 
-        function tellStan() {
+        function completeTask(viaDrag = false) {
+            setState('happy');
+            updateFriendship(state.currentTask.reward, true); 
+            els.speechBubble.classList.add('hidden');
+            state.currentTask = null;
+            const rect = els.stan.getBoundingClientRect();
+            createParticles('heart', rect.left + rect.width/2, rect.top + rect.height/2);
+            playHappySound();
+            if (!viaDrag) els.input.value = '';
+            updateStanVisuals();
+            saveGame();
+        }
+
+        function processInput() {
             const text = els.input.value.toLowerCase().trim();
             if (!text) return;
+            const rect = els.stan.getBoundingClientRect();
+            const centerX = rect.left + rect.width / 2;
+            const centerY = rect.top + rect.height / 2;
 
-            if (text.includes('hair') && (text.includes('nice') || text.includes('cool') || text.includes('love') || text.includes('great') || text.includes('good') || text.includes('pretty'))) {
-                setState('happy');
-                updateFriendship(10);
-                unlockItem('tophat');
+            // 1. Wake up logic
+            if (state.isSleeping) {
+                if (text.includes('wake')) {
+                    state.isSleeping = false;
+                    setState('confused');
+                    els.speechBubble.innerText = "Huh? I'm up!";
+                    els.speechBubble.classList.remove('hidden');
+                    setTimeout(() => els.speechBubble.classList.add('hidden'), 2000);
+                    updateStanVisuals();
+                } else {
+                    // els.speechBubble.innerText = "Zzz...";
+                    // els.speechBubble.classList.remove('hidden');
+                    // Removed per request "no textbox... until he wakes up"
+                }
                 els.input.value = '';
                 return;
             }
 
+            // 2. Secret Words (Instant Effects)
             if (secretWords[text]) {
                 const action = secretWords[text];
                 if (action === 'matrix_unlock') unlockItem('matrix');
@@ -377,20 +793,46 @@
                 return;
             }
 
-            const isSad = sadWords.some(word => text.includes(word));
-            const isHappy = happyWords.some(word => text.includes(word));
+            // 3. Task Checking
+            if (state.currentTask) {
+                const completed = state.currentTask.keywords.some(k => text.includes(k));
+                if (completed) {
+                    completeTask();
+                    return;
+                }
+            }
 
-            if (isSad) {
-                setState('sad');
-                updateFriendship(-15);
-            } else if (isHappy) {
+            // 4. Special Unlock: Top Hat
+            if (text.includes('hair') && calculateSentiment(text) > 0) {
                 setState('happy');
                 updateFriendship(10);
+                unlockItem('tophat');
+                playHappySound();
+                els.input.value = '';
+                return;
+            }
+
+            // 5. NLP Sentiment Logic
+            const score = calculateSentiment(text);
+
+            if (score < 0) {
+                setState('sad');
+                updateFriendship(-5);
+                createParticles('tear', centerX, centerY);
+                playSadSound();
+            } else if (score > 0) {
+                setState('happy');
+                updateFriendship(5);
+                createParticles('heart', centerX, centerY);
+                playHappySound();
             } else {
                 setState('confused');
                 state.confusedCount++;
+                playConfusedSound();
                 if (state.confusedCount >= 3) unlockItem('nose');
             }
+
+            saveGame();
             els.input.value = '';
         }
 
@@ -404,10 +846,24 @@
             updateStanVisuals();
         }
 
-        function updateFriendship(amount) {
-            let newVal = Math.max(0, Math.min(100, state.friendship + amount));
-            if (newVal >= 50 && state.friendship < 50) unlockItem('hat');
-            if (newVal >= 100 && state.friendship < 100) unlockItem('golden');
+        function updateFriendship(amount, bypassCap = false) {
+            if (amount > 0 && !bypassCap) {
+                if (state.dailyPoints >= DAILY_CAP) {
+                    els.prompt.innerText = "Stan is overwhelmed with compliments today.";
+                    return; 
+                }
+                state.dailyPoints += amount;
+            } else {
+                els.prompt.innerText = "Prove you're a human. Make Stan smile.";
+            }
+
+            // Ensure we are working with an integer
+            let current = parseInt(state.friendship);
+            if(isNaN(current)) current = 10;
+
+            let newVal = Math.max(0, Math.min(100, current + amount));
+            if (newVal >= 50 && current < 50) unlockItem('hat');
+            if (newVal >= 100 && current < 100) unlockItem('golden');
             state.friendship = newVal;
             
             els.friendshipText.innerText = state.friendship + '%';
@@ -420,22 +876,26 @@
             
             els.friendshipBar.style.backgroundColor = color;
             els.friendshipBg.className = `w-full h-3 rounded-full overflow-hidden ${state.equipped.matrix ? 'bg-[#003300]' : 'bg-gray-200'}`;
+            saveGame();
         }
 
         function unlockItem(itemId) {
             if (!state.unlocked[itemId]) {
                 state.unlocked[itemId] = true;
-                alert(`Unlocked: ${ITEMS.find(i => i.id === itemId).name}!`);
+                playUnlockSound();
+                const rect = els.container.getBoundingClientRect();
+                createParticles('confetti', rect.left + 225, rect.top + 100);
                 renderInventory();
+                saveGame();
             }
         }
 
-        function toggleEquip(itemId, forceEquip = false) {
+        function toggleEquip(itemId) {
             if (!state.unlocked[itemId]) return;
             
             const itemMeta = ITEMS.find(i => i.id === itemId);
             
-            if (state.equipped[itemId] && !forceEquip) {
+            if (state.equipped[itemId]) {
                 state.equipped[itemId] = false;
             } else {
                 ITEMS.filter(i => i.slot === itemMeta.slot).forEach(i => {
@@ -444,18 +904,18 @@
                 state.equipped[itemId] = true;
             }
             
+            saveGame();
             renderInventory();
             updateStanVisuals();
-            updateFriendship(0); 
         }
 
         function updateInventoryPanel() {
             if (state.showInventory) {
-                els.inventoryPanel.classList.remove('translate-y-full');
-                els.inventoryPanel.classList.add('translate-y-0');
+                els.inventoryPanel.classList.remove('translate-y-full', 'opacity-0', 'pointer-events-none');
+                els.inventoryPanel.classList.add('translate-y-0', 'opacity-100', 'pointer-events-auto');
             } else {
-                els.inventoryPanel.classList.remove('translate-y-0');
-                els.inventoryPanel.classList.add('translate-y-full');
+                els.inventoryPanel.classList.remove('translate-y-0', 'opacity-100', 'pointer-events-auto');
+                els.inventoryPanel.classList.add('translate-y-full', 'opacity-0', 'pointer-events-none');
             }
         }
 
@@ -512,6 +972,41 @@
             const eq = state.equipped;
             const eff = state.effect;
 
+            // Sleeping Logic
+            if(state.isSleeping) {
+                els.zzz.classList.remove('hidden');
+                els.stan.classList.add('sleeping-pose');
+                // Hide Eyes
+                els.parts.eyeLeft.classList.add('hidden');
+                els.parts.eyeRight.classList.add('hidden');
+                // Hide Bubbles
+                els.speechBubble.classList.add('hidden');
+                // Force hide arm when sleeping
+                els.parts.arm.classList.add('hidden');
+            } else {
+                els.zzz.classList.add('hidden');
+                els.stan.classList.remove('sleeping-pose');
+                // Show Eyes
+                els.parts.eyeLeft.classList.remove('hidden');
+                els.parts.eyeRight.classList.remove('hidden');
+                // Show Speech Bubble if task active
+                if(state.currentTask) {
+                    els.speechBubble.innerText = state.currentTask.text; // Ensure text update
+                    els.speechBubble.classList.remove('hidden');
+                } else {
+                    els.speechBubble.classList.add('hidden');
+                }
+                // Show arm (will be styled below based on status)
+                els.parts.arm.classList.remove('hidden');
+            }
+
+            // Food Visibility
+            if (!state.isSleeping && state.currentTask && state.currentTask.type === 'hunger') {
+                els.draggableFood.classList.remove('hidden');
+            } else {
+                els.draggableFood.classList.add('hidden');
+            }
+
             if (eq.matrix) {
                 els.container.classList.add('matrix-mode');
                 els.container.classList.remove('bg-white');
@@ -533,10 +1028,14 @@
             if (eq.golden) els.stan.classList.add('golden-skin');
             else els.stan.classList.remove('golden-skin');
 
-            els.stan.classList.remove('animate-dance', 'animate-shake', 'opacity-20');
+            els.stan.classList.remove('animate-dance', 'animate-shake', 'opacity-20', 'animate-backflip');
+            els.fireContainer.classList.add('hidden');
+
             if (eff === 'dance') els.stan.classList.add('animate-dance');
             if (eff === 'shake') els.stan.classList.add('animate-shake');
             if (eff === 'invisible') els.stan.classList.add('opacity-20');
+            if (eff === 'backflip') els.stan.classList.add('animate-backflip');
+            if (eff === 'fire') els.fireContainer.classList.remove('hidden');
 
             if (eq.hat) els.parts.accHat.classList.remove('hidden'); else els.parts.accHat.classList.add('hidden');
             if (eq.tophat) els.parts.accTophat.classList.remove('hidden'); else els.parts.accTophat.classList.add('hidden');
@@ -587,27 +1086,30 @@
                 }
             }
 
-            if (s === 'idle') {
-                els.parts.arm.classList.add('opacity-0', 'rotate-0');
-                els.parts.arm.classList.remove('opacity-100', 'rotate-[-140deg]', 'rotate-[-20deg]');
-                els.parts.handWrapper.classList.add('opacity-0', 'scale-0');
-                els.parts.handWrapper.classList.remove('opacity-100', 'scale-100', 'rotate-[140deg]', 'rotate-[20deg]');
-            } else {
-                els.parts.arm.classList.remove('opacity-0', 'rotate-0');
-                els.parts.arm.classList.add('opacity-100');
-                els.parts.handWrapper.classList.remove('opacity-0', 'scale-0');
-                els.parts.handWrapper.classList.add('opacity-100', 'scale-100');
+            // Only apply arm styling if NOT sleeping (handled above with hidden class)
+            if (!state.isSleeping) {
+                if (s === 'idle') {
+                    els.parts.arm.classList.add('opacity-0', 'rotate-0');
+                    els.parts.arm.classList.remove('opacity-100', 'rotate-[-140deg]', 'rotate-[-20deg]');
+                    els.parts.handWrapper.classList.add('opacity-0', 'scale-0');
+                    els.parts.handWrapper.classList.remove('opacity-100', 'scale-100', 'rotate-[140deg]', 'rotate-[20deg]');
+                } else {
+                    els.parts.arm.classList.remove('opacity-0', 'rotate-0');
+                    els.parts.arm.classList.add('opacity-100');
+                    els.parts.handWrapper.classList.remove('opacity-0', 'scale-0');
+                    els.parts.handWrapper.classList.add('opacity-100', 'scale-100');
 
-                if (s === 'happy' || s === 'confused') {
-                    els.parts.arm.classList.add('rotate-[-140deg]');
-                    els.parts.arm.classList.remove('rotate-[-20deg]');
-                    els.parts.handWrapper.classList.add('rotate-[140deg]');
-                    els.parts.handWrapper.classList.remove('rotate-[20deg]');
-                } else if (s === 'sad') {
-                    els.parts.arm.classList.add('rotate-[-20deg]');
-                    els.parts.arm.classList.remove('rotate-[-140deg]');
-                    els.parts.handWrapper.classList.add('rotate-[20deg]');
-                    els.parts.handWrapper.classList.remove('rotate-[140deg]');
+                    if (s === 'happy' || s === 'confused') {
+                        els.parts.arm.classList.add('rotate-[-140deg]');
+                        els.parts.arm.classList.remove('rotate-[-20deg]');
+                        els.parts.handWrapper.classList.add('rotate-[140deg]');
+                        els.parts.handWrapper.classList.remove('rotate-[20deg]');
+                    } else if (s === 'sad') {
+                        els.parts.arm.classList.add('rotate-[-20deg]');
+                        els.parts.arm.classList.remove('rotate-[-140deg]');
+                        els.parts.handWrapper.classList.add('rotate-[20deg]');
+                        els.parts.handWrapper.classList.remove('rotate-[140deg]');
+                    }
                 }
             }
 

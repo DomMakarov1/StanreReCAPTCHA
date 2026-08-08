@@ -1,0 +1,14 @@
+{
+  "name": "wordbridge",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Give it two words, it names the thing connecting them. Runs on a local Ollama model.",
+  "scripts": {
+    "start": "node server.js",
+    "build-models": "node bakeoff/build.js",
+    "bakeoff": "node bakeoff/run.js"
+  },
+  "engines": {
+    "node": ">=18"
+  }
+}

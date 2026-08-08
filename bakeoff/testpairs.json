@@ -1,0 +1,42 @@
+[
+  { "a": "milk", "b": "sour", "category": "causal", "accept": ["yogurt", "cheese", "curdled milk", "curds"] },
+  { "a": "flour", "b": "water", "category": "causal", "accept": ["dough", "paste", "bread", "glue"] },
+  { "a": "sun", "b": "rain", "category": "causal", "accept": ["rainbow"] },
+  { "a": "grape", "b": "time", "category": "causal", "accept": ["wine", "raisin"] },
+  { "a": "sand", "b": "heat", "category": "causal", "accept": ["glass"] },
+  { "a": "caterpillar", "b": "time", "category": "causal", "accept": ["butterfly", "cocoon", "chrysalis"] },
+
+  { "a": "orange", "b": "president", "category": "entity", "accept": ["Donald Trump", "Trump"] },
+  { "a": "moon", "b": "first", "category": "entity", "accept": ["Neil Armstrong", "Armstrong"] },
+  { "a": "telephone", "b": "inventor", "category": "entity", "accept": ["Alexander Graham Bell", "Bell"] },
+  { "a": "relativity", "b": "hair", "category": "entity", "accept": ["Albert Einstein", "Einstein"] },
+  { "a": "boxing", "b": "butterfly", "category": "entity", "accept": ["Muhammad Ali", "Ali"] },
+  { "a": "wheelchair", "b": "black holes", "category": "entity", "accept": ["Stephen Hawking", "Hawking"] },
+  { "a": "turtleneck", "b": "iphone", "category": "entity", "accept": ["Steve Jobs", "Jobs"] },
+  { "a": "canvas", "b": "ear", "category": "entity", "accept": ["Vincent van Gogh", "van Gogh"] },
+
+  { "a": "money", "b": "root", "category": "idiom", "accept": ["money is the root of all evil", "root of all evil"] },
+  { "a": "bird", "b": "worm", "category": "idiom", "accept": ["the early bird gets the worm", "early bird catches the worm", "early bird"] },
+  { "a": "stone", "b": "birds", "category": "idiom", "accept": ["kill two birds with one stone", "two birds one stone", "two birds with one stone"] },
+  { "a": "straw", "b": "camel", "category": "idiom", "accept": ["the straw that broke the camel's back", "last straw"] },
+  { "a": "rome", "b": "day", "category": "idiom", "accept": ["rome wasn't built in a day"] },
+  { "a": "love", "b": "saying", "category": "idiom", "accept": ["love is blind", "love conquers all", "all you need is love"] },
+  { "a": "cake", "b": "saying", "category": "idiom", "accept": ["you can't have your cake and eat it too", "piece of cake", "have your cake and eat it"] },
+  { "a": "spilt", "b": "saying", "category": "idiom", "accept": ["don't cry over spilt milk", "no use crying over spilt milk"] },
+
+  { "a": "ring", "b": "movie", "category": "title", "accept": ["the lord of the rings", "the ring", "lord of the rings"] },
+  { "a": "iceberg", "b": "movie", "category": "title", "accept": ["Titanic"] },
+  { "a": "rain", "b": "song", "category": "title", "accept": ["singin in the rain", "purple rain", "singing in the rain"] },
+  { "a": "dinosaur", "b": "movie", "category": "title", "accept": ["Jurassic Park"] },
+  { "a": "wizard", "b": "book", "category": "title", "accept": ["Harry Potter", "the wizard of oz", "wizard of oz"] },
+
+  { "a": "snow", "b": "man", "category": "compound", "accept": ["snowman"] },
+  { "a": "fire", "b": "truck", "category": "compound", "accept": ["fire truck", "firetruck"] },
+  { "a": "honey", "b": "comb", "category": "compound", "accept": ["honeycomb"] },
+  { "a": "green", "b": "house", "category": "compound", "accept": ["greenhouse"] },
+
+  { "a": "black", "b": "white", "category": "concept", "accept": ["chess", "piano", "zebra", "grey", "gray", "penguin"] },
+  { "a": "red", "b": "stop", "category": "concept", "accept": ["traffic light", "stop sign", "red light"] },
+  { "a": "crown", "b": "throne", "category": "concept", "accept": ["king", "monarchy", "royalty", "queen"] },
+  { "a": "needle", "b": "thread", "category": "concept", "accept": ["sewing", "stitch", "tailor"] }
+]

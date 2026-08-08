@@ -1,0 +1,186 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>wordbridge</title>
+<style>
+  :root {
+    --bg: #faf9f7;
+    --surface: #ffffff;
+    --border: #e2ded8;
+    --text: #1c1a17;
+    --muted: #6f6963;
+    --accent: #b4522d;
+    --shadow: 0 1px 2px rgba(0,0,0,.05), 0 8px 24px rgba(0,0,0,.05);
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --bg: #16150f;
+      --surface: #201e18;
+      --border: #35322a;
+      --text: #f2efe8;
+      --muted: #9c958a;
+      --accent: #e08a5f;
+      --shadow: 0 1px 2px rgba(0,0,0,.3), 0 8px 24px rgba(0,0,0,.35);
+    }
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0; min-height: 100vh; padding: 3rem 1.25rem;
+    display: flex; flex-direction: column; align-items: center;
+    background: var(--bg); color: var(--text);
+    font: 16px/1.5 ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif;
+  }
+  main { width: 100%; max-width: 34rem; }
+  h1 { margin: 0 0 .25rem; font-size: 1.35rem; letter-spacing: -.02em; font-weight: 650; }
+  .sub { margin: 0 0 2rem; color: var(--muted); font-size: .9rem; }
+
+  .inputs { display: flex; align-items: center; gap: .6rem; }
+  input[type=text] {
+    flex: 1; min-width: 0; padding: .85rem 1rem;
+    font: inherit; color: var(--text);
+    background: var(--surface);
+    border: 1px solid var(--border); border-radius: 10px;
+    box-shadow: var(--shadow);
+  }
+  input[type=text]:focus { outline: 2px solid var(--accent); outline-offset: 1px; }
+  .plus { color: var(--muted); font-size: 1.1rem; flex: none; }
+
+  button {
+    margin-top: .9rem; width: 100%; padding: .85rem 1rem;
+    font: inherit; font-weight: 600; color: #fff;
+    background: var(--accent); border: 0; border-radius: 10px; cursor: pointer;
+  }
+  button:disabled { opacity: .55; cursor: default; }
+
+  .answer {
+    margin-top: 2rem; padding: 2rem 1.5rem; min-height: 7.5rem;
+    display: flex; flex-direction: column; align-items: center; justify-content: center; gap: .6rem;
+    text-align: center;
+    background: var(--surface); border: 1px solid var(--border);
+    border-radius: 14px; box-shadow: var(--shadow);
+  }
+  .answer .value { font-size: 1.9rem; font-weight: 640; letter-spacing: -.02em; line-height: 1.2; }
+  .answer .meta { color: var(--muted); font-size: .78rem; }
+  .answer .placeholder, .answer .error { color: var(--muted); font-size: .92rem; }
+  .answer .error { color: var(--accent); }
+
+  .history { margin: 1.75rem 0 0; padding: 0; list-style: none; font-size: .88rem; }
+  .history li { display: flex; gap: .5rem; padding: .5rem 0; border-top: 1px solid var(--border); }
+  .history .pair { color: var(--muted); flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .history .got { font-weight: 600; }
+
+  footer { margin-top: 2rem; display: flex; align-items: center; gap: .5rem; font-size: .8rem; color: var(--muted); }
+  select { font: inherit; font-size: .8rem; color: var(--muted); background: transparent; border: 1px solid var(--border); border-radius: 7px; padding: .25rem .4rem; }
+</style>
+</head>
+<body>
+<main>
+  <h1>wordbridge</h1>
+  <p class="sub">Two words in. The thing connecting them out.</p>
+
+  <form id="form">
+    <div class="inputs">
+      <input type="text" id="a" placeholder="orange" autocomplete="off" autofocus>
+      <span class="plus">+</span>
+      <input type="text" id="b" placeholder="president" autocomplete="off">
+    </div>
+    <button type="submit" id="go">Connect</button>
+  </form>
+
+  <div class="answer" id="answer">
+    <span class="placeholder">Try <strong>wood</strong> + <strong>fire</strong>, or <strong>time</strong> + <strong>saying</strong>.</span>
+  </div>
+
+  <ul class="history" id="history"></ul>
+
+  <footer>
+    <label for="model">model</label>
+    <select id="model"><option>loading…</option></select>
+  </footer>
+</main>
+
+<script>
+const $ = (id) => document.getElementById(id);
+const form = $('form'), answerBox = $('answer'), historyEl = $('history'), modelSel = $('model');
+const history = [];
+
+async function loadModels() {
+  try {
+    const res = await fetch('/api/models');
+    const data = await res.json();
+    if (!data.models || !data.models.length) throw new Error(data.error || 'no models');
+    modelSel.innerHTML = data.models.map((m) => `<option value="${m}">${m}</option>`).join('');
+    if (!data.tuned) show('error', 'No relate-* models yet — run `npm run build-models`.');
+  } catch (err) {
+    modelSel.innerHTML = '<option>unavailable</option>';
+    show('error', String(err.message || err));
+  }
+}
+
+function show(kind, text, meta) {
+  if (kind === 'answer') {
+    answerBox.innerHTML = '';
+    const v = document.createElement('div');
+    v.className = 'value';
+    v.textContent = text;
+    answerBox.append(v);
+    if (meta) {
+      const m = document.createElement('div');
+      m.className = 'meta';
+      m.textContent = meta;
+      answerBox.append(m);
+    }
+  } else {
+    answerBox.innerHTML = `<span class="${kind}"></span>`;
+    answerBox.firstChild.textContent = text;
+  }
+}
+
+function pushHistory(a, b, got) {
+  history.unshift({ a, b, got });
+  history.length = Math.min(history.length, 8);
+  historyEl.innerHTML = '';
+  for (const h of history) {
+    const li = document.createElement('li');
+    const pair = document.createElement('span');
+    pair.className = 'pair';
+    pair.textContent = `${h.a} + ${h.b}`;
+    const got = document.createElement('span');
+    got.className = 'got';
+    got.textContent = h.got;
+    li.append(pair, got);
+    historyEl.append(li);
+  }
+}
+
+form.addEventListener('submit', async (event) => {
+  event.preventDefault();
+  const a = $('a').value.trim(), b = $('b').value.trim();
+  if (!a || !b) return;
+
+  $('go').disabled = true;
+  show('placeholder', 'thinking…');
+
+  try {
+    const res = await fetch('/api/relate', {
+      method: 'POST',
+      headers: { 'content-type': 'application/json' },
+      body: JSON.stringify({ a, b, model: modelSel.value }),
+    });
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.error || `error ${res.status}`);
+    show('answer', data.answer, `${data.ms} ms`);
+    pushHistory(a, b, data.answer);
+  } catch (err) {
+    show('error', String(err.message || err));
+  } finally {
+    $('go').disabled = false;
+  }
+});
+
+loadModels();
+</script>
+</body>
+</html>

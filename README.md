@@ -31,7 +31,7 @@ downloading the official installer directly. On Linux it runs Ollama's install
 script. If it can't manage it, it says so and points you at the download page —
 it won't leave you guessing.
 
-Building **all** the default base models is a ~30 GB download, so start with one
+Building **all** the default base models is a ~45 GB download, so start with one
 and add others once you know the pipeline works:
 
 ```sh
@@ -82,11 +82,20 @@ Full per-pair results are written to `bakeoff/results-<timestamp>.json`.
 Knowledge scales hard with parameter count on exactly the pairs you care about,
 so take the largest thing that fits in memory.
 
-| RAM / VRAM | Try | Expect |
-|---|---|---|
-| 8 GB | `llama3.2:3b`, `qwen3:4b` | Fine on causal pairs, poor on people and idioms |
-| 16 GB | `qwen3:8b`, `llama3.1:8b`, `gemma3:12b` | Workable — the sensible starting point |
-| 32 GB+ | `mistral-small3.2`, `qwen3:32b`, `gemma3:27b` | Noticeably better entity recall |
+| RAM | Try | Download | Expect |
+|---|---|---|---|
+| 8 GB | `llama3.2:3b`, `qwen3:4b` | ~2–3 GB | Fine on causal pairs, poor on people and idioms |
+| 16 GB | `qwen3:8b`, `gemma3:12b` | ~5–8 GB | Workable middle ground |
+| 32 GB | `mistral-small3.2`, `gemma3:27b` | ~15–17 GB | Noticeably better entity and idiom recall |
+| 64 GB+ | `llama3.3:70b` | ~40 GB | Best local knowledge, slow without a big GPU |
+
+**Slow generation matters less here than you'd expect.** The answer is one or
+two tokens, so even a 27B model running on CPU returns in a couple of seconds.
+What you'll notice is the *first* query after startup, while weights load into
+memory — after that `keep_alive` holds the model there for 10 minutes.
+
+A GPU makes everything faster but changes nothing about what fits: Ollama falls
+back to system RAM, and for one-word answers that's perfectly usable.
 
 ## Tuning
 

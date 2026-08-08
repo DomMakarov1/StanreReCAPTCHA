@@ -14,7 +14,15 @@ const path = require('path');
 
 const { resolveOllama } = require('../lib/ollama-bin');
 
-const DEFAULT_BASES = ['qwen3:8b', 'llama3.1:8b', 'gemma3:12b', 'mistral-small3.2'];
+// Spans a wide size range on purpose: the small one is the control. If it
+// scores close to the 27B, size isn't buying you anything and you should keep
+// the fast model. Approximate 4-bit download sizes in the comments.
+const DEFAULT_BASES = [
+  'qwen3:8b',          //  ~5 GB — baseline
+  'gemma3:12b',        //  ~8 GB
+  'mistral-small3.2',  // ~15 GB
+  'gemma3:27b',        // ~17 GB
+];
 
 const TEMPLATE = path.join(__dirname, '..', 'models', 'Modelfile.template');
 

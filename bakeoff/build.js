@@ -12,6 +12,8 @@ const fs = require('fs');
 const os = require('os');
 const path = require('path');
 
+const { resolveOllama } = require('../lib/ollama-bin');
+
 const DEFAULT_BASES = ['qwen3:8b', 'llama3.1:8b', 'gemma3:12b', 'mistral-small3.2'];
 
 const TEMPLATE = path.join(__dirname, '..', 'models', 'Modelfile.template');
@@ -21,39 +23,20 @@ function derivedName(base) {
   return `relate-${base.replace(/[:/]/g, '-').replace(/[^a-zA-Z0-9._-]/g, '')}`;
 }
 
-/**
- * Confirm the `ollama` CLI exists before attempting any build, so a missing
- * install reports itself once and clearly rather than as N identical failures.
- * Returns an error string, or null when everything looks fine.
- */
-function preflight() {
-  try {
-    execFileSync('ollama', ['--version'], { stdio: 'pipe' });
-    return null;
-  } catch (err) {
-    if (err.code === 'ENOENT') {
-      return [
-        "`ollama` was not found on your PATH.",
-        '',
-        '  - Not installed?  Get it from https://ollama.com/download',
-        '  - Just installed? Close this terminal and open a new one — the',
-        '    installer adds Ollama to PATH, but only for new shells.',
-      ].join('\n');
-    }
-    // The binary exists but errored — almost always the background service.
-    return [
-      `\`ollama --version\` failed: ${err.message.split('\n')[0]}`,
-      '',
-      '  The Ollama service may not be running. Launch the Ollama app, or run',
-      '  `ollama serve` in a separate terminal, then try again.',
-    ].join('\n');
-  }
-}
-
 function main() {
-  const problem = preflight();
-  if (problem) {
-    process.stderr.write(`${problem}\n`);
+  // resolveOllama() also checks the standard install locations, so this works
+  // in a terminal that was open before Ollama was installed.
+  const ollama = resolveOllama();
+  if (!ollama) {
+    process.stderr.write(
+      [
+        '`ollama` was not found.',
+        '',
+        '  Install it automatically:  npm run setup',
+        '  Or download it yourself:   https://ollama.com/download',
+        '',
+      ].join('\n')
+    );
     process.exitCode = 1;
     return;
   }
@@ -70,7 +53,7 @@ function main() {
     process.stdout.write(`building ${name}  (from ${base})\n`);
     try {
       // `ollama create` pulls the base automatically if it isn't local yet.
-      execFileSync('ollama', ['create', name, '-f', modelfile], { stdio: 'inherit' });
+      execFileSync(ollama, ['create', name, '-f', modelfile], { stdio: 'inherit' });
       built.push(name);
     } catch (err) {
       // A failure on one base shouldn't sink the line-up — but say why it failed.

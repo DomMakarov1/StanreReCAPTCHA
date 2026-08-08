@@ -13,24 +13,38 @@ account, no per-query cost, nothing leaves your machine.
 
 ## Requirements
 
-- [Ollama](https://ollama.com/download) installed and running
 - Node.js 18 or newer
+- [Ollama](https://ollama.com/download) — or let `npm run setup` install it
 
 No npm dependencies — everything uses Node built-ins.
 
 ## Quick start
 
 ```sh
-npm run build-models    # creates the relate-* models (pulls bases if needed)
-npm start               # http://localhost:3000
+npm run setup                     # installs Ollama if missing, starts the service
+npm run build-models -- qwen3:8b  # builds one model (~5 GB download)
+npm start                         # http://localhost:3000
 ```
 
-`build-models` downloads several multi-GB base models the first time. To build
-just one:
+`npm run setup` uses winget on Windows and Homebrew on macOS, falling back to
+downloading the official installer directly. On Linux it runs Ollama's install
+script. If it can't manage it, it says so and points you at the download page —
+it won't leave you guessing.
+
+Building **all** the default base models is a ~30 GB download, so start with one
+and add others once you know the pipeline works:
 
 ```sh
-npm run build-models -- qwen3:8b
+npm run build-models              # the full default line-up
+npm run build-models -- qwen3:8b gemma3:12b
 ```
+
+### "`ollama` was not found" right after installing it
+
+The installer adds Ollama to your PATH, but only for terminals opened
+*afterwards*. This project looks in the standard install locations too, so it
+should work regardless — but if you're running `ollama` by hand, open a new
+terminal first.
 
 ## The bake-off
 
@@ -111,7 +125,9 @@ actually helped.
 public/index.html   the page
 server.js           serves it, and proxies /api/relate → Ollama
 lib/answer.js       strips <think> tags, preambles, quotes; scores matches
-lib/ollama.js       the one place that talks to Ollama
+lib/ollama.js       the one place that talks to Ollama over HTTP
+lib/ollama-bin.js   locates the ollama executable; checks the service
+scripts/setup.js    installs Ollama and starts it
 models/             Modelfile template — the actual prompt
 bakeoff/            test pairs, model builder, scoring harness
 ```

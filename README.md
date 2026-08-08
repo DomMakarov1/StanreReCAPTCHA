@@ -1,2 +1,0 @@
-# StanreReCAPTCHA
-Make Stan smile :)

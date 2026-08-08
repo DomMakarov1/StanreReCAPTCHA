@@ -100,8 +100,8 @@ variable is the model itself. Output looks like:
 
 ```
 model                overall    causal    entity     idiom     title  compound   concept median ms
-gemma3:27b               78%       83%       38%       50%       60%      100%       75%       420
-qwen3:8b                 63%       83%       50%       63%       80%      100%       75%       910
+qwen3:8b                 63%       83%       38%       38%       60%      100%       75%       380
+gemma3:27b               80%       83%       75%       75%       80%      100%      100%      2100
 ```
 
 The category split is what to read. Expect a shape like the above: **causal and

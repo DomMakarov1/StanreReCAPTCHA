@@ -4,6 +4,7 @@
 // Installs Ollama if it's missing, then makes sure the service is up.
 //
 //   npm run setup
+//   npm run setup -- --force    # reinstall over a broken install
 //
 // Deliberately a separate command rather than something `build-models` does on
 // its own — installing software should be an action you asked for, not a side
@@ -16,7 +17,7 @@ const path = require('path');
 const { Readable } = require('stream');
 const { pipeline } = require('stream/promises');
 
-const { resolveOllama, daemonReady } = require('../lib/ollama-bin');
+const { resolveOllama, daemonReady, runnerPresent } = require('../lib/ollama-bin');
 
 const WINDOWS_INSTALLER = 'https://ollama.com/download/OllamaSetup.exe';
 const LINUX_INSTALL_SCRIPT = 'https://ollama.com/install.sh';
@@ -111,12 +112,24 @@ async function startDaemon(bin) {
 }
 
 async function main() {
+  const force = process.argv.includes('--force');
   let bin = resolveOllama();
 
-  if (bin) {
+  // A CLI without its runner is a broken install, not an install — reinstalling
+  // is the fix, and it's what the user came here for.
+  const broken = Boolean(bin) && !runnerPresent();
+
+  if (bin && !broken && !force) {
     say(`Ollama is already installed (${bin}).`);
   } else {
-    say('Ollama not found — installing it now.\n');
+    if (broken) {
+      say('Ollama is installed but incomplete — the llama-server runner is missing.');
+      say('That usually means the installer ran out of disk space. Reinstalling.\n');
+    } else if (bin) {
+      say('Reinstalling Ollama (--force).\n');
+    } else {
+      say('Ollama not found — installing it now.\n');
+    }
 
     const installed =
       process.platform === 'win32' ? await installWindows()
@@ -127,6 +140,12 @@ async function main() {
     if (!installed || !bin) {
       say('\nCould not install Ollama automatically.');
       say('Install it by hand from https://ollama.com/download, then re-run this.');
+      process.exitCode = 1;
+      return;
+    }
+    if (!runnerPresent()) {
+      say('\nThe install still has no llama-server runner.');
+      say('Check free disk space, then reinstall from https://ollama.com/download');
       process.exitCode = 1;
       return;
     }
@@ -141,7 +160,7 @@ async function main() {
   }
 
   say('\nOllama is installed and running.');
-  say('Next:  npm run build-models -- qwen3:8b');
+  say('Next:  ollama pull qwen3:8b   then   npm start');
 }
 
 main().catch((err) => {

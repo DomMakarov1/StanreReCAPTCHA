@@ -21,23 +21,30 @@ No npm dependencies — everything uses Node built-ins.
 ## Quick start
 
 ```sh
-npm run setup                     # installs Ollama if missing, starts the service
-npm run build-models -- qwen3:8b  # builds one model (~5 GB download)
-npm start                         # http://localhost:3000
+npm run setup            # installs Ollama if missing, starts the service
+ollama pull qwen3:8b     # any model will do (~5 GB)
+npm start                # http://localhost:3000
 ```
+
+There is no build step. The system prompt and few-shot examples are sent with
+every request, so any model you have downloaded works as-is.
 
 `npm run setup` uses winget on Windows and Homebrew on macOS, falling back to
 downloading the official installer directly. On Linux it runs Ollama's install
 script. If it can't manage it, it says so and points you at the download page —
 it won't leave you guessing.
 
-Building **all** the default base models is a ~45 GB download, so start with one
-and add others once you know the pipeline works:
+Pull whichever models you want to compare. Downloads are 5-17 GB each, so start
+with one and add others once you know it works:
 
 ```sh
-npm run build-models              # the full default line-up
-npm run build-models -- qwen3:8b gemma3:12b
+ollama pull qwen3:8b
+ollama pull gemma3:27b
 ```
+
+`npm run build-models` is available but **optional** — it bakes the prompt into
+named `relate-*` models so you can use them from `ollama run` directly. Nothing
+in this project needs it.
 
 ### Storing the weights somewhere else
 
@@ -84,16 +91,17 @@ This is the important part. Which base model you pick matters far more than any
 other decision here, and the only way to know is to measure.
 
 ```sh
-npm run bakeoff
+npm run bakeoff                        # every model you have downloaded
+npm run bakeoff -- gemma3:27b qwen3:8b # or just these
 ```
 
-Every model gets the same 35 test pairs and the same Modelfile, so the only
-variable is the base. Output looks like:
+Every model gets the same 35 test pairs and the same prompt, so the only
+variable is the model itself. Output looks like:
 
 ```
 model                overall    causal    entity     idiom     title  compound   concept median ms
-relate-qwen3-8b          63%       83%       38%       50%       60%      100%       75%       420
-relate-gemma3-12b        71%       83%       50%       63%       80%      100%       75%       910
+gemma3:27b               78%       83%       38%       50%       60%      100%       75%       420
+qwen3:8b                 63%       83%       50%       63%       80%      100%       75%       910
 ```
 
 The category split is what to read. Expect a shape like the above: **causal and
@@ -131,8 +139,8 @@ back to system RAM, and for one-word answers that's perfectly usable.
 
 ## Tuning
 
-Everything that shapes behaviour lives in **`models/Modelfile.template`** — the
-system prompt, the sampling parameters, and the few-shot `MESSAGE` examples.
+Everything that shapes behaviour lives in **`lib/prompt.js`** — the system
+prompt, the sampling options, and the few-shot examples.
 
 The few-shot block does the heavy lifting. For small models, examples move
 behaviour far more than instructions do, and each one there teaches a different
@@ -140,14 +148,13 @@ kind of link (entity, causal, idiom, format-hint, compound). If you edit them,
 keep that spread, and keep the list short — too many and the model starts
 matching the examples instead of generalising past them.
 
-After any edit, rebuild and re-measure:
+After any edit just re-measure — there's nothing to rebuild:
 
 ```sh
-npm run build-models && npm run bakeoff
+npm run bakeoff
 ```
 
-Other knobs worth trying: raise `temperature` if answers feel too safe, and add
-`PARAMETER num_ctx 2048` if you want to trade a little memory for headroom.
+Raise `temperature` in `OPTIONS` if answers feel too safe.
 
 ## If the bake-off disappoints
 
@@ -168,9 +175,9 @@ server.js           serves it, and proxies /api/relate → Ollama
 lib/answer.js       strips <think> tags, preambles, quotes; scores matches
 lib/ollama.js       the one place that talks to Ollama over HTTP
 lib/ollama-bin.js   locates the ollama executable; checks the service
+lib/prompt.js       the actual prompt — system, few-shot, options
 scripts/setup.js    installs Ollama and starts it
-models/             Modelfile template — the actual prompt
-bakeoff/            test pairs, model builder, scoring harness
+bakeoff/            test pairs, optional model builder, scoring harness
 ```
 
 The server proxies rather than letting the browser call Ollama directly. That's

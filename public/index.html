@@ -112,7 +112,6 @@ async function loadModels() {
     const data = await res.json();
     if (!data.models || !data.models.length) throw new Error(data.error || 'no models');
     modelSel.innerHTML = data.models.map((m) => `<option value="${m}">${m}</option>`).join('');
-    if (!data.tuned) show('error', 'No relate-* models yet — run `npm run build-models`.');
   } catch (err) {
     modelSel.innerHTML = '<option>unavailable</option>';
     show('error', String(err.message || err));

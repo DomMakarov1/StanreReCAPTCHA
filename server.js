@@ -70,11 +70,9 @@ async function handleRelate(req, res) {
 
 async function handleModels(res) {
   try {
-    const all = await listModels();
-    const relateModels = all.filter((n) => n.startsWith('relate-'));
-    // Prefer purpose-built models, but don't hide everything else — a bare base
-    // model still works, just without the system prompt or few-shot examples.
-    return sendJson(res, 200, { models: relateModels.length ? relateModels : all, tuned: relateModels.length > 0 });
+    // Every local model works — the prompt is sent with each request rather
+    // than baked in, so there's nothing to filter for.
+    return sendJson(res, 200, { models: (await listModels()).sort() });
   } catch {
     return sendJson(res, 502, { error: `can't reach Ollama at ${OLLAMA_HOST}`, models: [] });
   }

@@ -1,8 +1,12 @@
 #!/usr/bin/env node
 'use strict';
 
-// Creates one `relate-*` Ollama model per base model, all from the same
-// Modelfile template, so the bake-off compares base models and nothing else.
+// Creates a named `relate-*` Ollama model per base, baking in the prompt from
+// lib/prompt.js.
+//
+// This is OPTIONAL. The prompt is sent with every request anyway, so the app and
+// the bake-off both work against plain base models. Use this only when you want
+// a pre-configured model you can call from `ollama run` directly.
 //
 //   npm run build-models                    # the default line-up
 //   npm run build-models -- qwen3:14b       # specific bases
@@ -13,6 +17,7 @@ const os = require('os');
 const path = require('path');
 
 const { resolveOllama } = require('../lib/ollama-bin');
+const { buildModelfile } = require('../lib/prompt');
 
 // Spans a wide size range on purpose: the small one is the control. If it
 // scores close to the 27B, size isn't buying you anything and you should keep
@@ -24,11 +29,57 @@ const DEFAULT_BASES = [
   'gemma3:27b',        // ~17 GB
 ];
 
-const TEMPLATE = path.join(__dirname, '..', 'models', 'Modelfile.template');
 
 /** qwen3:8b -> relate-qwen3-8b */
 function derivedName(base) {
   return `relate-${base.replace(/[:/]/g, '-').replace(/[^a-zA-Z0-9._-]/g, '')}`;
+}
+
+/** Model names the *server* can currently see, or null if it can't be asked. */
+function localModels(ollama) {
+  try {
+    const out = execFileSync(ollama, ['list'], { stdio: 'pipe', encoding: 'utf8' });
+    return out
+      .split('\n')
+      .slice(1) // header row
+      .map((line) => line.trim().split(/\s+/)[0])
+      .filter(Boolean);
+  } catch {
+    return null;
+  }
+}
+
+/**
+ * "pull model manifest: file does not exist" is ambiguous — it covers a typo in
+ * the model name AND a server that's looking at the wrong models directory
+ * (the usual cause when OLLAMA_MODELS was set but the service restarted without
+ * it). Showing what the server can actually see distinguishes the two at a
+ * glance: a plausible list means a bad name, an empty one means a lost setting.
+ */
+function explainFailure(ollama, missing) {
+  const available = localModels(ollama);
+  const lines = [''];
+
+  if (available === null) {
+    lines.push('Could not ask Ollama what it has — is the service running?');
+  } else if (!available.length) {
+    lines.push('The Ollama service reports NO local models at all.');
+    lines.push('');
+    lines.push('If you have already downloaded one, the service is reading a');
+    lines.push('different directory than you downloaded into — OLLAMA_MODELS is');
+    lines.push('typically lost when the service restarts. Restart it with the');
+    lines.push('variable set:');
+    lines.push('');
+    lines.push('  $env:OLLAMA_MODELS = "<your models folder>"');
+    lines.push('  ollama serve');
+  } else {
+    lines.push(`Not found: ${missing.join(', ')}`);
+    lines.push(`Available locally: ${available.join(', ')}`);
+    lines.push('');
+    lines.push(`Download one with:  ollama pull ${missing[0]}`);
+  }
+
+  return lines.join('\n');
 }
 
 function main() {
@@ -50,13 +101,13 @@ function main() {
   }
 
   const bases = process.argv.slice(2).length ? process.argv.slice(2) : DEFAULT_BASES;
-  const template = fs.readFileSync(TEMPLATE, 'utf8');
   const built = [];
+  const failed = [];
 
   for (const base of bases) {
     const name = derivedName(base);
     const modelfile = path.join(os.tmpdir(), `${name}.Modelfile`);
-    fs.writeFileSync(modelfile, template.replace('__BASE__', base));
+    fs.writeFileSync(modelfile, buildModelfile(base));
 
     process.stdout.write(`building ${name}  (from ${base})\n`);
     try {
@@ -66,21 +117,20 @@ function main() {
     } catch (err) {
       // A failure on one base shouldn't sink the line-up — but say why it failed.
       process.stdout.write(`  !! failed — skipping ${base}: ${err.message.split('\n')[0]}\n`);
+      failed.push(base);
     } finally {
       fs.rmSync(modelfile, { force: true });
     }
   }
 
-  // Preflight already proved the CLI works, so a total wipeout here is about
-  // the base models themselves, not the install.
-  process.stdout.write(
-    built.length
-      ? `\nBuilt ${built.length}: ${built.join(', ')}\nNext: npm run bakeoff\n`
-      : '\nNothing built — see the errors above. Usually the base model name is\n' +
-        'wrong or the download failed. Check available names at\n' +
-        'https://ollama.com/library, then retry one at a time:\n' +
-        '  npm run build-models -- qwen3:8b\n'
-  );
+  if (built.length) {
+    process.stdout.write(`\nBuilt ${built.length}: ${built.join(', ')}\nNext: npm run bakeoff\n`);
+  }
+  // The CLI already proved itself above, so any failure here is about the base
+  // models. Ask the server what it actually has and say so.
+  if (failed.length) {
+    process.stdout.write(`${explainFailure(ollama, failed)}\n`);
+  }
   if (!built.length) process.exitCode = 1;
 }
 

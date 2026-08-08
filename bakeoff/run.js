@@ -75,14 +75,16 @@ async function main() {
   let models = process.argv.slice(2);
   if (!models.length) {
     try {
-      models = (await listModels()).filter((n) => n.startsWith('relate-'));
+      // Every local model is fair game — the prompt travels with the request,
+      // so a plain base model works as-is.
+      models = (await listModels()).sort();
     } catch {
       console.error(`Can't reach Ollama at ${OLLAMA_HOST}. Is it running?`);
       process.exitCode = 1;
       return;
     }
     if (!models.length) {
-      console.error('No relate-* models found. Run `npm run build-models` first.');
+      console.error('No models found. Download one first, e.g. `ollama pull qwen3:8b`.');
       process.exitCode = 1;
       return;
     }

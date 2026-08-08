@@ -39,6 +39,38 @@ npm run build-models              # the full default line-up
 npm run build-models -- qwen3:8b gemma3:12b
 ```
 
+### Storing the weights somewhere else
+
+Ollama keeps model weights in `%USERPROFILE%\.ollama\models` (Windows) or
+`~/.ollama/models`, which is usually the system drive. Models are 5–20 GB each,
+so you may want them elsewhere — `OLLAMA_MODELS` controls this.
+
+**It has to be set for the Ollama service, not just your shell.** The background
+process writes the weights, so setting the variable in a terminal and pulling
+from that same terminal does nothing if the service is already running.
+
+Windows, keeping them next to the project:
+
+```powershell
+# 1. Quit Ollama completely — system tray icon, right-click, Quit.
+#    Closing the window is not enough; the service keeps running.
+
+# 2. Create the folder and set the variable permanently for your user
+mkdir D:\Claude\wordbridge\model-store
+[Environment]::SetEnvironmentVariable(
+  'OLLAMA_MODELS', 'D:\Claude\wordbridge\model-store', 'User')
+
+# 3. Start Ollama again from the Start menu, then in a NEW terminal:
+ollama pull gemma3:27b
+```
+
+Watch `model-store\blobs` fill up to confirm it took effect. `model-store/` is
+gitignored — never commit weights.
+
+Already pulled models before changing this? They stay in the old location. Move
+the contents of `%USERPROFILE%\.ollama\models` into the new folder, or just pull
+again and delete the old directory.
+
 ### "`ollama` was not found" right after installing it
 
 The installer adds Ollama to your PATH, but only for terminals opened

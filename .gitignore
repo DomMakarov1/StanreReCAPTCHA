@@ -1,3 +1,6 @@
 node_modules/
 bakeoff/results-*.json
 .DS_Store
+
+# Ollama weights, when OLLAMA_MODELS points in here. Tens of GB — never commit.
+model-store/

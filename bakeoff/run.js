@@ -15,6 +15,7 @@ const fs = require('fs');
 const path = require('path');
 
 const { relate, listModels, OLLAMA_HOST } = require('../lib/ollama');
+const { daemonReady } = require('../lib/ollama-bin');
 const { isMatch } = require('../lib/answer');
 
 const PAIRS = JSON.parse(fs.readFileSync(path.join(__dirname, 'testpairs.json'), 'utf8'));
@@ -72,6 +73,15 @@ function report(byModel) {
 }
 
 async function main() {
+  // Without this, an unreachable service produces 35 identical failures and a
+  // 0% scoreboard that looks like a model problem.
+  if (!(await daemonReady())) {
+    console.error(`Ollama is not responding at ${OLLAMA_HOST}.`);
+    console.error('Start it with `ollama serve`, then try again.');
+    process.exitCode = 1;
+    return;
+  }
+
   let models = process.argv.slice(2);
   if (!models.length) {
     try {

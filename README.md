@@ -26,6 +26,10 @@ ollama pull qwen3:8b     # any model will do (~5 GB)
 npm start                # http://localhost:3000
 ```
 
+On Windows, **`start.bat`** does the last part for you: it starts Ollama (unless
+it's already running), waits for it to answer, starts the app, and opens the
+page. Double-click it or run it from a terminal.
+
 There is no build step. The system prompt and few-shot examples are sent with
 every request, so any model you have downloaded works as-is.
 
@@ -84,6 +88,29 @@ The installer adds Ollama to your PATH, but only for terminals opened
 *afterwards*. This project looks in the standard install locations too, so it
 should work regardless — but if you're running `ollama` by hand, open a new
 terminal first.
+
+## What it does
+
+**Connect** — two words in, the thing linking them out.
+
+**Split** — the reverse: name a thing, get the two words that would lead someone
+to it. Handy as a puzzle generator.
+
+**Chaining** — click any result to carry it into the next question. `orange +
+president` gives Donald Trump; click it and ask what Donald Trump plus something
+else gives. The trail below the answer keeps the path.
+
+**Remembered answers** — every result is cached, so the same question always
+gets the same answer, and repeats are instant. The cache lives in
+`cache/pairs.json` as a flat list of records:
+
+```json
+[{ "mode": "relate", "model": "gemma3:27b",
+   "inputs": ["orange", "president"], "answer": "Donald Trump", "at": "..." }]
+```
+
+That format is deliberate — it's directly usable as training data if you ever
+want to fine-tune. Delete the file to start over. It's gitignored.
 
 ## The bake-off
 

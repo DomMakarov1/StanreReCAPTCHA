@@ -4,3 +4,6 @@ bakeoff/results-*.json
 
 # Ollama weights, when OLLAMA_MODELS points in here. Tens of GB — never commit.
 model-store/
+
+# Remembered answers. Personal, regenerable, and grows without bound.
+cache/

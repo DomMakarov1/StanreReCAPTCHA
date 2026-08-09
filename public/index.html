@@ -12,6 +12,7 @@
     --text: #1c1a17;
     --muted: #6f6963;
     --accent: #b4522d;
+    --accent-soft: #b4522d18;
     --shadow: 0 1px 2px rgba(0,0,0,.05), 0 8px 24px rgba(0,0,0,.05);
   }
   @media (prefers-color-scheme: dark) {
@@ -22,6 +23,7 @@
       --text: #f2efe8;
       --muted: #9c958a;
       --accent: #e08a5f;
+      --accent-soft: #e08a5f22;
       --shadow: 0 1px 2px rgba(0,0,0,.3), 0 8px 24px rgba(0,0,0,.35);
     }
   }
@@ -34,7 +36,16 @@
   }
   main { width: 100%; max-width: 34rem; }
   h1 { margin: 0 0 .25rem; font-size: 1.35rem; letter-spacing: -.02em; font-weight: 650; }
-  .sub { margin: 0 0 2rem; color: var(--muted); font-size: .9rem; }
+  .sub { margin: 0 0 1.5rem; color: var(--muted); font-size: .9rem; }
+
+  .modes { display: flex; gap: .25rem; margin-bottom: 1.25rem; padding: .25rem;
+           background: var(--surface); border: 1px solid var(--border); border-radius: 10px; }
+  .modes button {
+    flex: 1; margin: 0; padding: .5rem; border-radius: 7px;
+    font: inherit; font-size: .88rem; font-weight: 600;
+    background: transparent; color: var(--muted); border: 0; cursor: pointer;
+  }
+  .modes button[aria-selected="true"] { background: var(--accent); color: #fff; }
 
   .inputs { display: flex; align-items: center; gap: .6rem; }
   input[type=text] {
@@ -46,44 +57,59 @@
   }
   input[type=text]:focus { outline: 2px solid var(--accent); outline-offset: 1px; }
   .plus { color: var(--muted); font-size: 1.1rem; flex: none; }
+  [hidden] { display: none !important; }
 
-  button {
+  form > button {
     margin-top: .9rem; width: 100%; padding: .85rem 1rem;
     font: inherit; font-weight: 600; color: #fff;
     background: var(--accent); border: 0; border-radius: 10px; cursor: pointer;
   }
-  button:disabled { opacity: .55; cursor: default; }
+  form > button:disabled { opacity: .55; cursor: default; }
 
   .answer {
-    margin-top: 2rem; padding: 2rem 1.5rem; min-height: 7.5rem;
-    display: flex; flex-direction: column; align-items: center; justify-content: center; gap: .6rem;
+    margin-top: 1.75rem; padding: 2rem 1.5rem; min-height: 7.5rem;
+    display: flex; flex-direction: column; align-items: center; justify-content: center; gap: .7rem;
     text-align: center;
     background: var(--surface); border: 1px solid var(--border);
     border-radius: 14px; box-shadow: var(--shadow);
   }
-  .answer .value { font-size: 1.9rem; font-weight: 640; letter-spacing: -.02em; line-height: 1.2; }
+  .answer .row { display: flex; align-items: center; gap: .6rem; flex-wrap: wrap; justify-content: center; }
+  .chip {
+    font-size: 1.9rem; font-weight: 640; letter-spacing: -.02em; line-height: 1.2;
+    font-family: inherit; color: var(--text);
+    background: none; border: 0; border-radius: 8px; padding: .1rem .4rem;
+    cursor: pointer;
+  }
+  .chip:hover, .chip:focus-visible { background: var(--accent-soft); color: var(--accent); outline: none; }
   .answer .meta { color: var(--muted); font-size: .78rem; }
   .answer .placeholder, .answer .error { color: var(--muted); font-size: .92rem; }
   .answer .error { color: var(--accent); }
+  .hint { color: var(--muted); font-size: .75rem; }
 
-  .history { margin: 1.75rem 0 0; padding: 0; list-style: none; font-size: .88rem; }
-  .history li { display: flex; gap: .5rem; padding: .5rem 0; border-top: 1px solid var(--border); }
-  .history .pair { color: var(--muted); flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-  .history .got { font-weight: 600; }
+  .chain { margin: 1.5rem 0 0; padding: 0; list-style: none; font-size: .88rem; }
+  .chain li { display: flex; gap: .5rem; padding: .5rem 0; border-top: 1px solid var(--border); }
+  .chain .from { color: var(--muted); flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .chain .to { font-weight: 600; }
 
   footer { margin-top: 2rem; display: flex; align-items: center; gap: .5rem; font-size: .8rem; color: var(--muted); }
-  select { font: inherit; font-size: .8rem; color: var(--muted); background: transparent; border: 1px solid var(--border); border-radius: 7px; padding: .25rem .4rem; }
+  select { font: inherit; font-size: .8rem; color: var(--muted); background: transparent;
+           border: 1px solid var(--border); border-radius: 7px; padding: .25rem .4rem; }
 </style>
 </head>
 <body>
 <main>
   <h1>wordbridge</h1>
-  <p class="sub">Two words in. The thing connecting them out.</p>
+  <p class="sub">Two words in, the thing connecting them out — or the reverse.</p>
+
+  <div class="modes" role="tablist">
+    <button type="button" id="mode-connect" role="tab" aria-selected="true">Connect</button>
+    <button type="button" id="mode-split" role="tab" aria-selected="false">Split</button>
+  </div>
 
   <form id="form">
     <div class="inputs">
       <input type="text" id="a" placeholder="orange" autocomplete="off" autofocus>
-      <span class="plus">+</span>
+      <span class="plus" id="plus">+</span>
       <input type="text" id="b" placeholder="president" autocomplete="off">
     </div>
     <button type="submit" id="go">Connect</button>
@@ -93,7 +119,7 @@
     <span class="placeholder">Try <strong>wood</strong> + <strong>fire</strong>, or <strong>time</strong> + <strong>saying</strong>.</span>
   </div>
 
-  <ul class="history" id="history"></ul>
+  <ul class="chain" id="chain"></ul>
 
   <footer>
     <label for="model">model</label>
@@ -103,8 +129,157 @@
 
 <script>
 const $ = (id) => document.getElementById(id);
-const form = $('form'), answerBox = $('answer'), historyEl = $('history'), modelSel = $('model');
-const history = [];
+const form = $('form'), answerBox = $('answer'), chainEl = $('chain'), modelSel = $('model');
+const inputA = $('a'), inputB = $('b'), plus = $('plus'), goBtn = $('go');
+
+let mode = 'connect';
+const chain = [];
+
+/* ---------- mode ---------- */
+
+function setMode(next) {
+  mode = next;
+  const connect = mode === 'connect';
+
+  $('mode-connect').setAttribute('aria-selected', String(connect));
+  $('mode-split').setAttribute('aria-selected', String(!connect));
+
+  // Split takes one input, so the second field and the "+" go away entirely
+  // rather than sitting there disabled.
+  inputB.hidden = !connect;
+  plus.hidden = !connect;
+  goBtn.textContent = connect ? 'Connect' : 'Split';
+  inputA.placeholder = connect ? 'orange' : 'Donald Trump';
+
+  show('placeholder', connect
+    ? 'Two words in, the thing connecting them out.'
+    : 'Name a thing — get the two words that would lead to it.');
+  inputA.focus();
+}
+
+$('mode-connect').addEventListener('click', () => setMode('connect'));
+$('mode-split').addEventListener('click', () => setMode('split'));
+
+/* ---------- rendering ---------- */
+
+function show(kind, text) {
+  answerBox.innerHTML = `<span class="${kind}"></span>`;
+  answerBox.firstChild.textContent = text;
+}
+
+/** Each result is a button: clicking it carries that word into the next step. */
+function showResults(words, meta) {
+  answerBox.innerHTML = '';
+
+  const row = document.createElement('div');
+  row.className = 'row';
+  words.forEach((word, i) => {
+    if (i) {
+      const sep = document.createElement('span');
+      sep.className = 'plus';
+      sep.textContent = '+';
+      row.append(sep);
+    }
+    const chip = document.createElement('button');
+    chip.type = 'button';
+    chip.className = 'chip';
+    chip.textContent = word;
+    chip.title = 'Use this as the next starting point';
+    chip.addEventListener('click', () => continueFrom(word));
+    row.append(chip);
+  });
+  answerBox.append(row);
+
+  const metaEl = document.createElement('div');
+  metaEl.className = 'meta';
+  metaEl.textContent = meta;
+  answerBox.append(metaEl);
+
+  const hint = document.createElement('div');
+  hint.className = 'hint';
+  hint.textContent = 'click a word to keep going from it';
+  answerBox.append(hint);
+}
+
+function pushChain(from, to) {
+  chain.unshift({ from, to });
+  chain.length = Math.min(chain.length, 10);
+  chainEl.innerHTML = '';
+  for (const step of chain) {
+    const li = document.createElement('li');
+    const fromEl = document.createElement('span');
+    fromEl.className = 'from';
+    fromEl.textContent = step.from;
+    const toEl = document.createElement('span');
+    toEl.className = 'to';
+    toEl.textContent = step.to;
+    li.append(fromEl, toEl);
+    chainEl.append(li);
+  }
+}
+
+/** Chaining: the clicked word becomes the new subject. */
+function continueFrom(word) {
+  if (mode === 'connect') {
+    inputA.value = word;
+    inputB.value = '';
+    inputB.focus();
+  } else {
+    inputA.value = word;
+    inputA.focus();
+  }
+  show('placeholder', mode === 'connect' ? `${word} + …?` : `splitting from ${word}…`);
+}
+
+/* ---------- requests ---------- */
+
+async function post(path, body) {
+  const res = await fetch(path, {
+    method: 'POST',
+    headers: { 'content-type': 'application/json' },
+    body: JSON.stringify(body),
+  });
+  const data = await res.json();
+  if (!res.ok) throw new Error(data.error || `error ${res.status}`);
+  return data;
+}
+
+form.addEventListener('submit', async (event) => {
+  event.preventDefault();
+  const a = inputA.value.trim();
+  const b = inputB.value.trim();
+  if (!a || (mode === 'connect' && !b)) return;
+
+  goBtn.disabled = true;
+  show('placeholder', 'thinking…');
+
+  // A large model can take a minute to page into RAM on the first query. Say so
+  // rather than letting it look like a hang.
+  const slowHint = setTimeout(
+    () => show('placeholder', 'loading the model into memory — first query only…'),
+    5000
+  );
+
+  try {
+    const model = modelSel.value;
+    if (mode === 'connect') {
+      const data = await post('/api/relate', { a, b, model });
+      showResults([data.answer], data.cached ? 'remembered' : `${data.ms} ms`);
+      pushChain(`${a} + ${b}`, data.answer);
+    } else {
+      const data = await post('/api/reverse', { thing: a, model });
+      showResults([data.a, data.b], data.cached ? 'remembered' : `${data.ms} ms`);
+      pushChain(a, `${data.a} + ${data.b}`);
+    }
+  } catch (err) {
+    show('error', String(err.message || err));
+  } finally {
+    clearTimeout(slowHint);
+    goBtn.disabled = false;
+  }
+});
+
+/* ---------- init ---------- */
 
 async function loadModels() {
   try {
@@ -117,75 +292,6 @@ async function loadModels() {
     show('error', String(err.message || err));
   }
 }
-
-function show(kind, text, meta) {
-  if (kind === 'answer') {
-    answerBox.innerHTML = '';
-    const v = document.createElement('div');
-    v.className = 'value';
-    v.textContent = text;
-    answerBox.append(v);
-    if (meta) {
-      const m = document.createElement('div');
-      m.className = 'meta';
-      m.textContent = meta;
-      answerBox.append(m);
-    }
-  } else {
-    answerBox.innerHTML = `<span class="${kind}"></span>`;
-    answerBox.firstChild.textContent = text;
-  }
-}
-
-function pushHistory(a, b, got) {
-  history.unshift({ a, b, got });
-  history.length = Math.min(history.length, 8);
-  historyEl.innerHTML = '';
-  for (const h of history) {
-    const li = document.createElement('li');
-    const pair = document.createElement('span');
-    pair.className = 'pair';
-    pair.textContent = `${h.a} + ${h.b}`;
-    const got = document.createElement('span');
-    got.className = 'got';
-    got.textContent = h.got;
-    li.append(pair, got);
-    historyEl.append(li);
-  }
-}
-
-form.addEventListener('submit', async (event) => {
-  event.preventDefault();
-  const a = $('a').value.trim(), b = $('b').value.trim();
-  if (!a || !b) return;
-
-  $('go').disabled = true;
-  show('placeholder', 'thinking…');
-
-  // A large model can take a minute to page into RAM on the first query. Say so
-  // rather than letting it look like a hang.
-  const slowHint = setTimeout(
-    () => show('placeholder', 'loading the model into memory — first query only…'),
-    5000
-  );
-
-  try {
-    const res = await fetch('/api/relate', {
-      method: 'POST',
-      headers: { 'content-type': 'application/json' },
-      body: JSON.stringify({ a, b, model: modelSel.value }),
-    });
-    const data = await res.json();
-    if (!res.ok) throw new Error(data.error || `error ${res.status}`);
-    show('answer', data.answer, `${data.ms} ms`);
-    pushHistory(a, b, data.answer);
-  } catch (err) {
-    show('error', String(err.message || err));
-  } finally {
-    clearTimeout(slowHint);
-    $('go').disabled = false;
-  }
-});
 
 loadModels();
 </script>

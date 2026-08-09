@@ -10,7 +10,8 @@ const http = require('http');
 const fs = require('fs');
 const path = require('path');
 
-const { relate, listModels, OLLAMA_HOST } = require('./lib/ollama');
+const { relate, reverse, listModels, OLLAMA_HOST } = require('./lib/ollama');
+const cache = require('./lib/cache');
 
 const PORT = Number(process.env.PORT) || 3000;
 const DEFAULT_MODEL = process.env.RELATE_MODEL || '';
@@ -57,12 +58,42 @@ async function handleRelate(req, res) {
   const model = String(payload.model || DEFAULT_MODEL || '').trim();
   if (!model) return sendJson(res, 400, { error: 'no model selected' });
 
+  const hit = cache.get('relate', model, [a, b]);
+  if (hit) return sendJson(res, 200, { answer: hit.answer, ms: 0, model, cached: true });
+
   try {
     const { answer, ms } = await relate(model, a, b);
     // An empty answer means the model replied with only whitespace or only
     // reasoning we stripped — surface it rather than showing a blank card.
     if (!answer) return sendJson(res, 502, { error: 'model returned nothing usable' });
-    return sendJson(res, 200, { answer, ms, model });
+    cache.set('relate', model, [a, b], { answer });
+    return sendJson(res, 200, { answer, ms, model, cached: false });
+  } catch (err) {
+    return sendJson(res, 502, { error: err.message });
+  }
+}
+
+async function handleReverse(req, res) {
+  let payload;
+  try {
+    payload = JSON.parse((await readBody(req)) || '{}');
+  } catch {
+    return sendJson(res, 400, { error: 'invalid JSON' });
+  }
+
+  const thing = String(payload.thing || '').trim().slice(0, 120);
+  if (!thing) return sendJson(res, 400, { error: 'need something to split' });
+
+  const model = String(payload.model || DEFAULT_MODEL || '').trim();
+  if (!model) return sendJson(res, 400, { error: 'no model selected' });
+
+  const hit = cache.get('reverse', model, [thing]);
+  if (hit) return sendJson(res, 200, { a: hit.a, b: hit.b, ms: 0, model, cached: true });
+
+  try {
+    const { a, b, ms } = await reverse(model, thing);
+    cache.set('reverse', model, [thing], { a, b });
+    return sendJson(res, 200, { a, b, ms, model, cached: false });
   } catch (err) {
     return sendJson(res, 502, { error: err.message });
   }
@@ -100,6 +131,7 @@ function serveStatic(req, res) {
 
 const server = http.createServer((req, res) => {
   if (req.method === 'POST' && req.url === '/api/relate') return handleRelate(req, res);
+  if (req.method === 'POST' && req.url === '/api/reverse') return handleReverse(req, res);
   if (req.method === 'GET' && req.url === '/api/models') return handleModels(res);
   if (req.method === 'GET') return serveStatic(req, res);
   res.writeHead(405).end('method not allowed');
@@ -108,4 +140,5 @@ const server = http.createServer((req, res) => {
 server.listen(PORT, () => {
   console.log(`wordbridge  →  http://localhost:${PORT}`);
   console.log(`ollama      →  ${OLLAMA_HOST}`);
+  console.log(`cache       →  ${cache.size()} answers remembered`);
 });
